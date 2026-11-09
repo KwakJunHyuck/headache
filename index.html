@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#3d5a4e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="두통 일지">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAADUklEQVR42u3dsWrWUBzG4fMFFwcROjt5D45F6KJTB5EOXXoVgpcgeBVdizjrUnD2HpycC+Lg6g14Yk76pjn58jxrk/o1+RlTOH/P4fTyvMC/DC4B4kAciANxIA7EgTgQB+JAHCAOxIE4EAfiQByIA3EgDsQB4kAciANxIA7EgTgQB8fm0Yp/9u31jRswxdnVxSp/7mGV/4JBFptIZFDGVjz8dRuUoY8u4lDGtq7hoAx9+FWWXuPw2Nji9fTkQByIA3EgDsSBOBAHxXqOZdz9upt+8MnTk9qX/vz8NP37PH72tval31/eTf8+T15/rH3px/tX07/P8w9fPTnuVcbI8U1ljBzfVMbI8U1lzDj++ONoLaN2VmsZtbNay6idNe9O99CHdw7EgTgQB+JAHIgDcSAOxIE4QByIA3GwkzhGVu40nTWycqe0rPcZWblTWtb7zFu508N6n76eHK191I5v7aN2fGsfteNb73QnK8G6WyY47/lx/z5mrPzb4v32zoE4EAfioJhb+Y/PL19MP/jNt+9l4fmX1NxK6vPs98nRVMbI8an5l9TcSurz7DeO1jJqZ6XmX1JzK6nP450DL6SIA3EgDsQB4kAciANxIA7EgTgQB+JYyMjKnaazUvMvqbmV1OfZ+5OjtY/a8an5l9TcSurzlJ0vE5z3/Fju+qbmVjq53945EAfiQBwUcytl3u4WpXFaOjUnkpqjsd/Kg5YxcnxqTiQ1R2O/lYcuo3ZWak4kNUdjvxW8kCIOEAfiQByIA3EgDsSBOBAH4kAc0HkcqX1SUnMiqTka+62s00ft+NScSGqOxn4rpat9UlJzIqk5Gvut4J0DcSAO2MgLaWrepLf5l9S+Lft9cqTmTXqbf0nt27LfOFLzJr3Nv6T2bfHOgRdSxIE4EAfiAHEgDsSBOBAH4kAciANxLCQ1b9Lb/Etq35a9PzlS8ya9zb+k9m0pO18mmJo36W3+pZP77Z0DcSAOxIE4EAfimOrs6sK13tz19OSggzg8PDZ3JYej/KmUscl/VvSxoas3HP1PqIzZDqeX52v9tLfXN255z3+d1owDv60gDsSBOEAciANxIA7EgTgQB+JAHIgDcYA4EAfiQByIA3EgDsSBOBAHiANxIA4W8RdO7ifZ4rXgOAAAAABJRU5ErkJggg==">
+<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAADUklEQVR42u3dsWrWUBzG4fMFFwcROjt5D45F6KJTB5EOXXoVgpcgeBVdizjrUnD2HpycC+Lg6g14Yk76pjn58jxrk/o1+RlTOH/P4fTyvMC/DC4B4kAciANxIA7EgTgQB+JAHCAOxIE4EAfiQByIA3EgDsQB4kAciANxIA7EgTgQB8fm0Yp/9u31jRswxdnVxSp/7mGV/4JBFptIZFDGVjz8dRuUoY8u4lDGtq7hoAx9+FWWXuPw2Nji9fTkQByIA3EgDsSBOBAHxXqOZdz9upt+8MnTk9qX/vz8NP37PH72tval31/eTf8+T15/rH3px/tX07/P8w9fPTnuVcbI8U1ljBzfVMbI8U1lzDj++ONoLaN2VmsZtbNay6idNe9O99CHdw7EgTgQB+JAHIgDcSAOxIE4QByIA3GwkzhGVu40nTWycqe0rPcZWblTWtb7zFu508N6n76eHK191I5v7aN2fGsfteNb73QnK8G6WyY47/lx/z5mrPzb4v32zoE4EAfioJhb+Y/PL19MP/jNt+9l4fmX1NxK6vPs98nRVMbI8an5l9TcSurz7DeO1jJqZ6XmX1JzK6nP450DL6SIA3EgDsQB4kAciANxIA7EgTgQB+JYyMjKnaazUvMvqbmV1OfZ+5OjtY/a8an5l9TcSurzlJ0vE5z3/Fju+qbmVjq53945EAfiQBwUcytl3u4WpXFaOjUnkpqjsd/Kg5YxcnxqTiQ1R2O/lYcuo3ZWak4kNUdjvxW8kCIOEAfiQByIA3EgDsSBOBAH4kAc0HkcqX1SUnMiqTka+62s00ft+NScSGqOxn4rpat9UlJzIqk5Gvut4J0DcSAO2MgLaWrepLf5l9S+Lft9cqTmTXqbf0nt27LfOFLzJr3Nv6T2bfHOgRdSxIE4EAfiAHEgDsSBOBAH4kAciANxLCQ1b9Lb/Etq35a9PzlS8ya9zb+k9m0pO18mmJo36W3+pZP77Z0DcSAOxIE4EAfimOrs6sK13tz19OSggzg8PDZ3JYej/KmUscl/VvSxoas3HP1PqIzZDqeX52v9tLfXN255z3+d1owDv60gDsSBOEAciANxIA7EgTgQB+JAHIgDcYA4EAfiQByIA3EgDsSBOBAHiANxIA4W8RdO7ifZ4rXgOAAAAABJRU5ErkJggg==">
+<title>두통 일지</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@500;700&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: 진료 수첩 — 왼쪽 기록 폼, 오른쪽 월간 달력·요약·목록. 좁으면 한 열. */
+:root{
+  --bg:#f3f4f1; --paper:#fbfbf8; --ink:#1f2421; --muted:#68706b; --line:#d9ddd6;
+  --accent:#3d5a4e; --accent-ink:#ffffff; --chip:#e8ebe5;
+  --p0:#e9ece6; --p1:#f2dfa4; --p2:#eeb36d; --p3:#d9733f; --p4:#a93a2d; --p5:#6b1f2a;
+  --warn:#9a4a12; --warn-bg:#fbeedd;
+  --f-display:"Hahmlet","Nanum Myeongjo",serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141715; --paper:#1c201d; --ink:#e7eae5; --muted:#9aa29c; --line:#323833;
+  --accent:#8fb8a5; --accent-ink:#0f1411; --chip:#262b27;
+  --p0:#262b27; --p1:#6e6233; --p2:#8f5f2c; --p3:#b0562c; --p4:#cf4a39; --p5:#e9707a;
+  --warn:#f0b27a; --warn-bg:#3a2a1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141715; --paper:#1c201d; --ink:#e7eae5; --muted:#9aa29c; --line:#323833;
+  --accent:#8fb8a5; --accent-ink:#0f1411; --chip:#262b27;
+  --p0:#262b27; --p1:#6e6233; --p2:#8f5f2c; --p3:#b0562c; --p4:#cf4a39; --p5:#e9707a;
+  --warn:#f0b27a; --warn-bg:#3a2a1a; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1140px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;border-bottom:2px solid var(--ink);padding-bottom:12px}
+h1{font-family:var(--f-display);font-weight:700;font-size:30px;margin:0;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:13px}
+.status{font-size:12px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:880px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:18px}
+h2{font-family:var(--f-display);font-size:18px;margin:0 0 12px;text-wrap:balance}
+h3{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.06em;margin:0 0 6px}
+form{display:flex;flex-direction:column;gap:16px}
+.row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);min-width:0}
+input[type=date],input[type=time],input[type=number],input[type=text],textarea,select{
+  font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 8px;width:100%;min-width:0;-webkit-appearance:none;appearance:none;min-height:38px}
+textarea{resize:vertical;min-height:56px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.scale{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:3px}
+.scale button{font-family:var(--f-mono);font-size:13px;padding:8px 0;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--ink);cursor:pointer}
+.scale button[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);font-weight:600}
+.scale-legend{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--chip);color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.meds{display:flex;flex-direction:column;gap:8px}
+.med{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.8fr) minmax(0,.9fr) minmax(0,1fr) auto;gap:6px;align-items:center}
+@media (max-width:480px){.med{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.btn{font:inherit;font-size:14px;font-weight:600;padding:9px 14px;border-radius:6px;border:1px solid var(--ink);background:var(--ink);color:var(--bg);cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line);font-weight:500}
+.btn.small{font-size:12px;padding:5px 9px}
+.btn.danger{background:transparent;color:var(--p4);border-color:var(--p4)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.msg{font-size:13px;color:var(--accent)}
+.right{display:flex;flex-direction:column;gap:20px;min-width:0}
+.monthbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.monthbar h2{margin:0}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.cal .dow{font-size:11px;color:var(--muted);text-align:center;padding-bottom:2px}
+.day{aspect-ratio:1/1;max-width:100%;border-radius:5px;background:var(--p0);display:flex;flex-direction:column;justify-content:space-between;padding:4px 5px;font-family:var(--f-mono);font-size:11px;border:1px solid transparent;cursor:default;color:var(--ink)}
+.day.out{visibility:hidden}
+.day.today{border-color:var(--ink)}
+.day.has{cursor:pointer}
+.day .n{opacity:.75}
+.day .pill{align-self:flex-end;font-size:9px;line-height:1;padding:2px 3px;border-radius:3px;background:var(--paper);color:var(--ink)}
+.legend{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:3px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+@media (max-width:560px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat .v{font-family:var(--f-mono);font-size:24px;font-variant-numeric:tabular-nums}
+.stat .k{font-size:12px;color:var(--muted)}
+.note{margin-top:12px;font-size:13px;background:var(--warn-bg);color:var(--warn);padding:9px 12px;border-radius:6px}
+.bars{display:flex;flex-direction:column;gap:6px;margin-top:14px}
+.bar{display:grid;grid-template-columns:96px minmax(0,1fr) 28px;gap:8px;align-items:center;font-size:13px}
+.bar .track{height:8px;background:var(--p0);border-radius:4px;overflow:hidden}
+.bar .fill{height:100%;background:var(--accent)}
+.bar .c{font-family:var(--f-mono);text-align:right;color:var(--muted)}
+.list{display:flex;flex-direction:column}
+.entry{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;padding:12px 0;border-top:1px solid var(--line);align-items:start}
+.entry:first-child{border-top:none}
+.sev{width:44px;height:44px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--f-mono);font-size:18px;font-weight:500}
+.entry .when{font-weight:600;font-size:14px}
+.entry .meta{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.entry .tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.tag{font-size:11px;padding:2px 7px;border-radius:999px;background:var(--chip);color:var(--ink)}
+.entry .ops{display:flex;flex-direction:column;gap:4px}
+.empty{color:var(--muted);font-size:14px;padding:6px 0}
+.example{opacity:.6;border:1px dashed var(--line);border-radius:8px;padding:0 10px;margin-top:8px}
+.example-label{font-size:11px;letter-spacing:.06em;color:var(--muted);margin-top:8px}
+.confirm{display:flex;gap:6px;align-items:center;font-size:12px;flex-wrap:wrap}
+footer{font-size:12px;color:var(--muted)}
+.hdr-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#summary .period{font-size:13px;color:var(--muted);margin:-6px 0 14px}
+.tbl-wrap{overflow-x:auto;margin-bottom:16px}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-size:12px;font-weight:600;color:var(--muted)}
+td.num{font-family:var(--f-mono)}
+td.hot{color:var(--p4);font-weight:600}
+.sum-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:640px){.sum-grid{grid-template-columns:minmax(0,1fr)}}
+.kv{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.kv b{font-family:var(--f-mono);font-weight:500}
+.fine{font-size:12px;color:var(--muted);margin-top:10px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>두통 일지</h1>
+      <div class="sub">언제, 얼마나, 어디가, 무엇 때문에 아팠는지 기록하고 진료 때 보여주세요.</div>
+    </div>
+    <div class="hdr-actions"><span class="status" id="status">불러오는 중…</span><button class="btn small" id="sumBtn" type="button">진료용 요약</button></div>
+  </header>
+
+  <section class="panel" id="summary" hidden aria-labelledby="sumTitle">
+    <div class="monthbar">
+      <h2 id="sumTitle">진료용 요약 · 최근 3개월</h2>
+      <div class="actions"><button class="btn ghost small" id="sumCopy" type="button">요약 복사</button><button class="btn ghost small" id="sumClose" type="button">닫기</button></div>
+    </div>
+    <div class="period" id="sumPeriod"></div>
+    <div id="sumBody"></div>
+  </section>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="formTitle">
+      <h2 id="formTitle">새 기록</h2>
+      <form id="form" autocomplete="off">
+        <div class="row">
+          <label class="f">날짜<input type="date" id="f-date" required></label>
+          <label class="f">시작 시각<input type="time" id="f-time"></label>
+          <label class="f">지속 시간<select id="f-dur">
+            <option value="">모름</option><option value="30">30분 이하</option><option value="60">1시간</option>
+            <option value="120">2시간</option><option value="240">4시간</option><option value="480">반나절</option>
+            <option value="1440">하루 종일</option><option value="2880">하루 이상</option></select></label>
+        </div>
+
+        <div>
+          <h3>통증 강도 (0–10)</h3>
+          <div class="scale" id="scale" role="group" aria-label="통증 강도"></div>
+          <div class="scale-legend"><span>없음</span><span>중간</span><span>참을 수 없음</span></div>
+        </div>
+
+        <div><h3>부위</h3><div class="chips" data-group="sites"></div></div>
+        <div><h3>통증 양상</h3><div class="chips" data-group="quality"></div></div>
+        <div><h3>동반 증상</h3><div class="chips" data-group="symptoms"></div></div>
+        <div><h3>의심되는 유발 요인</h3><div class="chips" data-group="triggers"></div></div>
+
+        <div>
+          <h3>복용한 약</h3>
+          <div class="meds" id="meds"></div>
+          <button type="button" class="btn ghost small" id="addMed" style="margin-top:8px">+ 약 추가</button>
+        </div>
+
+        <div><h3>일상생활 지장</h3><div class="chips" id="impact"></div></div>
+        <div><h3>기타</h3><div class="chips"><button type="button" class="chip" id="f-period" aria-pressed="false">생리 중</button></div></div>
+
+        <label class="f">메모<textarea id="f-memo" placeholder="예: 오후 회의 후 시작, 물 적게 마심"></textarea></label>
+
+        <div class="actions">
+          <button class="btn" type="submit" id="saveBtn">기록 저장</button>
+          <button class="btn ghost" type="button" id="cancelEdit" hidden>수정 취소</button>
+          <span class="msg" id="formMsg" aria-live="polite"></span>
+        </div>
+      </form>
+    </section>
+
+    <div class="right">
+      <section class="panel" aria-labelledby="monthTitle">
+        <div class="monthbar">
+          <button class="btn ghost small" id="prevM" aria-label="이전 달">‹</button>
+          <h2 id="monthTitle"></h2>
+          <button class="btn ghost small" id="nextM" aria-label="다음 달">›</button>
+        </div>
+        <div class="cal" id="cal"></div>
+        <div class="legend">
+          <span><i style="background:var(--p0)"></i>없음</span>
+          <span><i style="background:var(--p1)"></i>1–2</span>
+          <span><i style="background:var(--p2)"></i>3–4</span>
+          <span><i style="background:var(--p3)"></i>5–6</span>
+          <span><i style="background:var(--p4)"></i>7–8</span>
+          <span><i style="background:var(--p5)"></i>9–10</span>
+          <span><span class="tag" style="font-size:9px">약</span> 약 복용일</span>
+        </div>
+        <div class="stats" id="stats"></div>
+        <div id="mohNote"></div>
+        <div id="triggerBars"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="listTitle">
+        <div class="monthbar">
+          <h2 id="listTitle">기록 목록</h2>
+          <div class="actions">
+            <button class="btn ghost small" id="copyBtn">텍스트 복사</button>
+            <button class="btn ghost small" id="csvBtn" hidden>CSV 저장</button>
+          </div>
+        </div>
+        <div class="list" id="list"></div>
+      </section>
+    </div>
+  </div>
+  <footer>통증 강도는 0–10 숫자 척도(NRS) 기준입니다. 기록은 이 기기의 이 브라우저에만 저장됩니다. 기기를 바꾸기 전에 CSV로 저장해 두세요.</footer>
+</div>
+
+<script>
+(function(){
+const OPTS={
+  sites:["앞이마","왼쪽 관자놀이","오른쪽 관자놀이","눈 뒤","정수리","뒤통수","목·어깨","머리 전체"],
+  quality:["욱신욱신(박동성)","조이는 듯","찌르는 듯","묵직함","터질 듯"],
+  symptoms:["메스꺼움","구토","빛에 예민","소리에 예민","시야 이상(전조)","어지러움","코막힘·눈물"],
+  triggers:["수면 부족","과다 수면","스트레스","끼니 거름","카페인","음주","날씨 변화","화면 장시간","운동","자세","탈수"]
+};
+const EFFECT=["2시간 내 사라짐","2시간 내 줄어듦","효과 없음"];
+const IMPACT=["지장 없음","일을 덜 함","쉬거나 누워 있음"];
+const $=s=>document.querySelector(s);
+const pad=n=>String(n).padStart(2,"0");
+const ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const sevVar=v=>v==null?"--p0":v<=0?"--p0":v<=2?"--p1":v<=4?"--p2":v<=6?"--p3":v<=8?"--p4":"--p5";
+const sevInk=v=>v>=7?"#fff":"var(--ink)";
+const durLabel=m=>({30:"30분 이하",60:"1시간",120:"2시간",240:"4시간",480:"반나절",1440:"하루 종일",2880:"하루 이상"})[m]||"";
+
+let entries=[]; let store=null; let editing=null; let intensity=5; let impact=""; let period=false;
+let view=new Date(); view.setDate(1);
+const sel={sites:new Set(),quality:new Set(),symptoms:new Set(),triggers:new Set()};
+
+/* ---------- form ---------- */
+const scale=$("#scale");
+for(let i=0;i<=10;i++){const b=document.createElement("button");b.type="button";b.textContent=i;b.dataset.v=i;
+  b.style.background=`var(${sevVar(i)})`;b.style.color=i>=7?"#fff":"";b.onclick=()=>{intensity=i;paintScale()};scale.appendChild(b)}
+function paintScale(){scale.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.v===intensity)))}
+document.querySelectorAll(".chips[data-group]").forEach(box=>{
+  const g=box.dataset.group;
+  OPTS[g].forEach(o=>{const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=o;b.setAttribute("aria-pressed","false");
+    b.onclick=()=>{sel[g].has(o)?sel[g].delete(o):sel[g].add(o);b.setAttribute("aria-pressed",String(sel[g].has(o)))};box.appendChild(b)});
+});
+function paintChips(){document.querySelectorAll(".chips[data-group]").forEach(box=>{const g=box.dataset.group;
+  box.querySelectorAll(".chip").forEach(b=>b.setAttribute("aria-pressed",String(sel[g].has(b.textContent))))})}
+IMPACT.forEach(o=>{const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=o;
+  b.onclick=()=>{impact=impact===o?"":o;paintExtra()};$("#impact").appendChild(b)});
+$("#f-period").onclick=()=>{period=!period;paintExtra()};
+function paintExtra(){$("#impact").querySelectorAll(".chip").forEach(b=>b.setAttribute("aria-pressed",String(b.textContent===impact)));
+  $("#f-period").setAttribute("aria-pressed",String(period))}
+let medSeq=0;
+function addMed(m={}){
+  const id=++medSeq;const row=document.createElement("div");row.className="med";
+  row.innerHTML=`<input type="text" id="mn${id}" placeholder="약 이름 (예: 타이레놀)" aria-label="약 이름" value="${esc(m.name)}">
+   <input type="text" id="md${id}" placeholder="용량" aria-label="용량" value="${esc(m.dose)}">
+   <input type="time" id="mt${id}" aria-label="복용 시각" value="${esc(m.time)}">
+   <select id="me${id}" aria-label="효과"><option value="">효과(2시간 뒤)</option>${(m.effect&&!EFFECT.includes(m.effect)?[m.effect,...EFFECT]:EFFECT).map(e=>`<option ${m.effect===e?"selected":""}>${esc(e)}</option>`).join("")}</select>
+   <button type="button" class="btn ghost small" aria-label="이 약 삭제">✕</button>`;
+  row.querySelector("button").onclick=()=>row.remove();$("#meds").appendChild(row);
+}
+$("#addMed").onclick=()=>addMed();
+function resetForm(){
+  editing=null;$("#form").reset();$("#f-date").value=ymd(new Date());
+  const n=new Date();$("#f-time").value=pad(n.getHours())+":"+pad(n.getMinutes());
+  intensity=5;paintScale();Object.values(sel).forEach(s=>s.clear());paintChips();impact="";period=false;paintExtra();
+  $("#meds").innerHTML="";$("#saveBtn").textContent="기록 저장";$("#cancelEdit").hidden=true;$("#formTitle").textContent="새 기록";
+}
+function loadForm(e){
+  editing=e.id;$("#f-date").value=e.date;$("#f-time").value=e.time||"";$("#f-dur").value=e.durationMin?String(e.durationMin):"";
+  intensity=e.intensity;paintScale();
+  for(const g in sel){sel[g]=new Set(e[g]||[])}paintChips();impact=e.impact||"";period=!!e.period;paintExtra();
+  $("#meds").innerHTML="";(e.meds||[]).forEach(addMed);$("#f-memo").value=e.memo||"";
+  $("#saveBtn").textContent="수정 저장";$("#cancelEdit").hidden=false;$("#formTitle").textContent="기록 수정";
+  $("#form").scrollIntoView({behavior:"smooth",block:"start"});
+}
+$("#cancelEdit").onclick=resetForm;
+$("#form").addEventListener("submit",async ev=>{
+  ev.preventDefault();
+  const meds=[...$("#meds").children].map(r=>{const [n,d,t,e]=r.querySelectorAll("input,select");return{name:n.value.trim(),dose:d.value.trim(),time:t.value,effect:e.value}}).filter(m=>m.name);
+  const data={date:$("#f-date").value,time:$("#f-time").value,durationMin:+$("#f-dur").value||null,intensity,
+    sites:[...sel.sites],quality:[...sel.quality],symptoms:[...sel.symptoms],triggers:[...sel.triggers],meds,impact,period,memo:$("#f-memo").value.trim(),
+    updatedAt:new Date().toISOString()};
+  if(!data.date){flash("날짜를 입력해 주세요.");return}
+  const id=editing||("h"+Date.now().toString(36)+Math.random().toString(36).slice(2,6));
+  const was=editing;
+  try{$("#saveBtn").disabled=true;await store.put(id,data);flash(was?"수정했습니다.":"저장했습니다.");
+    const d=new Date(data.date+"T00:00");view=new Date(d.getFullYear(),d.getMonth(),1);resetForm();render()}
+  catch(e){flash(e&&e.code==="quota_exceeded"?"저장 공간이 가득 찼습니다. 오래된 기록을 지운 뒤 다시 시도해 주세요.":"저장하지 못했습니다. 잠시 후 다시 시도해 주세요.")}
+  finally{$("#saveBtn").disabled=false}
+});
+let flashT;function flash(t){$("#formMsg").textContent=t;clearTimeout(flashT);flashT=setTimeout(()=>$("#formMsg").textContent="",3000)}
+
+/* ---------- views ---------- */
+function monthEntries(){const k=view.getFullYear()+"-"+pad(view.getMonth()+1);return entries.filter(e=>e.date&&e.date.startsWith(k))}
+function render(){
+  $("#monthTitle").textContent=view.getFullYear()+"년 "+(view.getMonth()+1)+"월";
+  const me=monthEntries();const byDay={};
+  me.forEach(e=>{const d=byDay[e.date]||(byDay[e.date]={max:0,med:false,n:0});d.max=Math.max(d.max,e.intensity);d.n++;if(e.meds&&e.meds.length)d.med=true});
+  const cal=$("#cal");cal.innerHTML=["일","월","화","수","목","금","토"].map(d=>`<div class="dow">${d}</div>`).join("");
+  const first=view.getDay();const days=new Date(view.getFullYear(),view.getMonth()+1,0).getDate();const today=ymd(new Date());
+  for(let i=0;i<first;i++)cal.insertAdjacentHTML("beforeend",`<div class="day out"></div>`);
+  for(let d=1;d<=days;d++){const key=view.getFullYear()+"-"+pad(view.getMonth()+1)+"-"+pad(d);const info=byDay[key];
+    const el=document.createElement("div");el.className="day"+(key===today?" today":"")+(info?" has":"");
+    if(info){el.style.background=`var(${sevVar(info.max)})`;el.style.color=sevInk(info.max);el.title=`${key} · 최고 ${info.max}/10 · ${info.n}건`;
+      el.tabIndex=0;el.onclick=el.onkeydown=ev=>{if(ev.type==="keydown"&&ev.key!=="Enter")return;const t=document.getElementById("e-"+key);t&&t.scrollIntoView({behavior:"smooth",block:"center"})}}
+    el.innerHTML=`<span class="n">${d}</span>${info&&info.med?'<span class="pill">약</span>':""}`;cal.appendChild(el)}
+  const dayCount=Object.keys(byDay).length;const medDays=Object.values(byDay).filter(d=>d.med).length;
+  const avg=me.length?(me.reduce((s,e)=>s+e.intensity,0)/me.length):null;const severe=Object.values(byDay).filter(d=>d.max>=7).length;
+  $("#stats").innerHTML=[["두통 일수",dayCount+"일"],["평균 강도",avg==null?"–":avg.toFixed(1)],["심한 날(7+)",severe+"일"],["약 복용일",medDays+"일"]]
+    .map(([k,v])=>`<div class="stat"><div class="v">${v}</div><div class="k">${k}</div></div>`).join("");
+  $("#mohNote").innerHTML=medDays>=10?`<div class="note">이번 달 진통제 복용일이 ${medDays}일입니다. 진통제를 한 달에 10~15일 이상 먹으면 오히려 두통이 잦아지는 ‘약물과용 두통’이 생길 수 있어, 진료 때 이 기록을 보여주시길 권합니다.</div>`
+    :dayCount>=15?`<div class="note">이번 달 두통이 ${dayCount}일입니다. 한 달 15일 이상 두통이 3개월 넘게 이어지면 만성 두통으로 보고 치료 방향이 달라지니 진료를 권합니다.</div>`:"";
+  const tc={};me.forEach(e=>(e.triggers||[]).forEach(t=>tc[t]=(tc[t]||0)+1));
+  const top=Object.entries(tc).sort((a,b)=>b[1]-a[1]).slice(0,6);const mx=top.length?top[0][1]:1;
+  $("#triggerBars").innerHTML=top.length?`<div class="bars"><h3 style="margin-top:4px">이번 달 유발 요인</h3>${top.map(([t,c])=>`<div class="bar"><span>${esc(t)}</span><div class="track"><div class="fill" style="width:${c/mx*100}%"></div></div><span class="c">${c}</span></div>`).join("")}</div>`:"";
+  renderList();
+}
+function entryHTML(e,example){
+  const tags=[...(e.sites||[]),...(e.quality||[]),...(e.symptoms||[])].map(t=>`<span class="tag">${esc(t)}</span>`).join("");
+  const trig=(e.triggers||[]).length?`<div class="meta">유발: ${e.triggers.map(esc).join(", ")}</div>`:"";
+  const meds=(e.meds||[]).length?`<div class="meta">약: ${e.meds.map(m=>esc(m.name)+(m.dose?" "+esc(m.dose):"")+(m.time?" ("+esc(m.time)+")":"")+(m.effect?" – "+esc(m.effect):"")).join(" · ")}</div>`:"";
+  const extra=[e.impact&&e.impact!=="지장 없음"?e.impact:"",e.period?"생리 중":""].filter(Boolean);
+  const memo=(extra.length?`<div class="meta">${extra.map(esc).join(" · ")}</div>`:"")+(e.memo?`<div class="meta">${esc(e.memo)}</div>`:"");
+  const dt=new Date(e.date+"T00:00");const dow="일월화수목금토"[dt.getDay()];
+  const ops=example?"":`<div class="ops"><button class="btn ghost small" data-edit="${e.id}">수정</button><button class="btn ghost small" data-del="${e.id}">삭제</button></div>`;
+  return `<div class="entry"${example?"":` id="e-${e.date}"`}><div class="sev" style="background:var(${sevVar(e.intensity)});color:${sevInk(e.intensity)}">${e.intensity}</div>
+    <div style="min-width:0"><div class="when">${dt.getMonth()+1}월 ${dt.getDate()}일 (${dow})${e.time?" "+esc(e.time):""}${e.durationMin?` <span class="meta">· ${durLabel(e.durationMin)}</span>`:""}</div>
+    ${tags?`<div class="tags">${tags}</div>`:""}${trig}${meds}${memo}</div>${ops}</div>`;
+}
+function renderList(){
+  const me=monthEntries().sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));
+  const list=$("#list");
+  if(!me.length){
+    const ex={date:ymd(new Date()),time:"14:30",durationMin:240,intensity:6,sites:["오른쪽 관자놀이","눈 뒤"],quality:["욱신욱신(박동성)"],symptoms:["빛에 예민"],triggers:["수면 부족","끼니 거름"],meds:[{name:"타이레놀",dose:"500mg",time:"15:00",effect:"조금"}],memo:""};
+    list.innerHTML=`<div class="empty">${entries.length?"이 달에는 기록이 없습니다.":"아직 기록이 없습니다. 왼쪽에서 첫 두통을 기록하면 여기와 달력에 쌓입니다."}</div>`+
+      (entries.length?"":`<div class="example-label">예시</div><div class="example">${entryHTML(ex,true)}</div>`);return}
+  list.innerHTML=me.map(e=>entryHTML(e,false)).join("");
+  list.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>{const e=entries.find(x=>x.id===b.dataset.edit);e&&loadForm(e)});
+  list.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
+    const ops=b.parentElement;const id=b.dataset.del;
+    ops.innerHTML=`<div class="confirm">지울까요?<button class="btn danger small">삭제</button><button class="btn ghost small">취소</button></div>`;
+    const [yes,no]=ops.querySelectorAll("button");no.onclick=renderList;
+    yes.onclick=async()=>{try{await store.del(id);if(editing===id)resetForm();render()}catch{flash("삭제하지 못했습니다.")}};
+  });
+}
+$("#prevM").onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()-1,1);render()};
+$("#nextM").onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()+1,1);render()};
+
+/* ---------- export ---------- */
+function asText(){
+  const me=monthEntries().sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  const head=`[두통 일지] ${view.getFullYear()}년 ${view.getMonth()+1}월 — ${new Set(me.map(e=>e.date)).size}일, ${me.length}건`;
+  return head+"\n"+me.map(e=>`${e.date} ${e.time||""} | 강도 ${e.intensity}/10${e.durationMin?" | "+durLabel(e.durationMin):""}`+
+    `${(e.sites||[]).length?" | 부위: "+e.sites.join(", "):""}${(e.quality||[]).length?" | 양상: "+e.quality.join(", "):""}`+
+    `${(e.symptoms||[]).length?" | 동반: "+e.symptoms.join(", "):""}${(e.triggers||[]).length?" | 유발: "+e.triggers.join(", "):""}`+
+    `${(e.meds||[]).length?" | 약: "+e.meds.map(m=>m.name+(m.dose?" "+m.dose:"")+(m.effect?"("+m.effect+")":"")).join(", "):""}${e.memo?" | "+e.memo:""}`).join("\n");
+}
+$("#copyBtn").onclick=async()=>{const t=asText();try{await navigator.clipboard.writeText(t);$("#copyBtn").textContent="복사됨"}
+  catch{const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");$("#copyBtn").textContent="복사됨"}catch{}ta.remove()}
+  setTimeout(()=>$("#copyBtn").textContent="텍스트 복사",1800)};
+function csv(){
+  const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
+  const rows=[["날짜","시각","지속","강도","부위","양상","동반 증상","유발 요인","약","일상 지장","생리","메모"]];
+  entries.slice().sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).forEach(e=>rows.push([e.date,e.time,durLabel(e.durationMin),e.intensity,(e.sites||[]).join("/"),(e.quality||[]).join("/"),(e.symptoms||[]).join("/"),(e.triggers||[]).join("/"),(e.meds||[]).map(m=>[m.name,m.dose,m.time,m.effect].filter(Boolean).join(" ")).join("/"),e.impact||"",e.period?"예":"",e.memo]));
+  return "﻿"+rows.map(r=>r.map(q).join(",")).join("\r\n");
+}
+
+/* ---------- clinic summary ---------- */
+const ONE_SIDE=["왼쪽 관자놀이","오른쪽 관자놀이"];
+function migraineLike(e){
+  let n=0;const has=(g,v)=>(e[g]||[]).includes(v);
+  if((e.sites||[]).some(s=>ONE_SIDE.includes(s))) n++;
+  if(has("quality","욱신욱신(박동성)")) n++;
+  if(e.intensity>=5) n++;
+  if(has("symptoms","메스꺼움")||has("symptoms","구토")) n++;
+  if(has("symptoms","빛에 예민")||has("symptoms","소리에 예민")) n++;
+  return n>=3;
+}
+function summaryData(){
+  const now=new Date();const months=[];
+  for(let i=2;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push(d.getFullYear()+"-"+pad(d.getMonth()+1))}
+  const inR=entries.filter(e=>e.date&&months.includes(e.date.slice(0,7)));
+  const per=months.map(m=>{const es=inR.filter(e=>e.date.startsWith(m));const days={};
+    es.forEach(e=>{const d=days[e.date]||(days[e.date]={max:0,med:false});d.max=Math.max(d.max,e.intensity);if((e.meds||[]).length)d.med=true});
+    const dv=Object.values(days);
+    return{m,days:dv.length,severe:dv.filter(d=>d.max>=7).length,med:dv.filter(d=>d.med).length,
+      avg:es.length?es.reduce((s,e)=>s+e.intensity,0)/es.length:null,mig:new Set(es.filter(migraineLike).map(e=>e.date)).size,
+      impact:new Set(es.filter(e=>e.impact==="쉬거나 누워 있음").map(e=>e.date)).size}});
+  const meds={};inR.forEach(e=>(e.meds||[]).forEach(x=>{const k=x.name.trim();if(!k)return;const r=meds[k]||(meds[k]={days:new Set(),n:0,gone:0,less:0,none:0});
+    r.days.add(e.date);r.n++;if(x.effect==="2시간 내 사라짐"||x.effect==="효과 있음")r.gone++;else if(x.effect==="2시간 내 줄어듦"||x.effect==="조금")r.less++;else if(x.effect==="효과 없음")r.none++}));
+  const tc={};inR.forEach(e=>(e.triggers||[]).forEach(t=>tc[t]=(tc[t]||0)+1));
+  const durs=inR.map(e=>e.durationMin).filter(Boolean).sort((a,b)=>a-b);
+  const sites={};inR.forEach(e=>(e.sites||[]).forEach(t=>sites[t]=(sites[t]||0)+1));
+  return{months,per,inR,meds,tc,durs,sites,periodDays:new Set(inR.filter(e=>e.period).map(e=>e.date)).size};
+}
+const mLabel=m=>(+m.slice(5))+"월";
+function renderSummary(){
+  const S=summaryData();
+  $("#sumPeriod").textContent=`${S.months[0].replace("-",".")} ~ ${S.months[2].replace("-",".")} · 총 ${S.inR.length}건 기록 · 작성 ${ymd(new Date()).replace(/-/g,".")}`;
+  if(!S.inR.length){$("#sumBody").innerHTML=`<div class="empty">최근 3개월 기록이 없습니다. 기록이 쌓이면 여기에 월별 표와 약 효과가 정리됩니다.</div>`;return}
+  const avgDays=S.per.reduce((s,p)=>s+p.days,0)/3;
+  const rows=S.per.map(p=>`<tr><td>${mLabel(p.m)}</td><td class="num${p.days>=15?" hot":""}">${p.days}</td><td class="num">${p.severe}</td><td class="num">${p.mig}</td><td class="num${p.med>=10?" hot":""}">${p.med}</td><td class="num">${p.avg==null?"–":p.avg.toFixed(1)}</td><td class="num">${p.impact}</td></tr>`).join("");
+  const medRows=Object.entries(S.meds).sort((a,b)=>b[1].days.size-a[1].days.size).map(([k,r])=>{const rated=r.gone+r.less+r.none;
+    return `<tr><td>${esc(k)}</td><td class="num">${r.days.size}</td><td class="num">${r.n}</td><td class="num">${rated?Math.round(r.gone/rated*100)+"%":"–"}</td><td class="num">${rated?Math.round(r.none/rated*100)+"%":"–"}</td></tr>`}).join("");
+  const top=(o,n)=>Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,n);
+  const med=S.durs.length?S.durs[Math.floor(S.durs.length/2)]:null;
+  const warn=[];
+  if(S.per.every(p=>p.days>=15))warn.push("3개월 연속 월 15일 이상 두통");
+  if(S.per.some(p=>p.med>=10))warn.push("월 10일 이상 약 복용한 달 있음");
+  $("#sumBody").innerHTML=`
+  <h3>월별 경과</h3>
+  <div class="tbl-wrap"><table><thead><tr><th>월</th><th>두통 일수</th><th>심한 날(7+)</th><th>편두통 양상</th><th>약 복용일</th><th>평균 강도</th><th>누워 지낸 날</th></tr></thead><tbody>${rows}</tbody></table></div>
+  ${medRows?`<h3>급성기 약</h3><div class="tbl-wrap"><table><thead><tr><th>약</th><th>복용 일수</th><th>복용 횟수</th><th>2시간 내 사라짐</th><th>효과 없음</th></tr></thead><tbody>${medRows}</tbody></table></div>`:""}
+  <div class="sum-grid">
+    <div><h3>한눈에</h3>
+      <div class="kv"><span>월평균 두통 일수</span><b>${avgDays.toFixed(1)}일</b></div>
+      <div class="kv"><span>지속 시간 (중앙값)</span><b>${med?durLabel(med):"–"}</b></div>
+      <div class="kv"><span>생리 중 두통</span><b>${S.periodDays}일</b></div>
+      ${warn.length?`<div class="note">${warn.map(esc).join(" · ")}</div>`:""}
+    </div>
+    <div><h3>자주 나온 부위 · 유발 요인</h3>
+      ${top(S.sites,3).map(([k,v])=>`<div class="kv"><span>${esc(k)}</span><b>${v}회</b></div>`).join("")}
+      ${top(S.tc,4).map(([k,v])=>`<div class="kv"><span>유발: ${esc(k)}</span><b>${v}회</b></div>`).join("")||'<div class="kv"><span>유발 요인 기록 없음</span><b></b></div>'}
+    </div>
+  </div>
+  <div class="fine">편두통 양상 = 한쪽 통증·박동성·강도 5 이상·메스꺼움·빛/소리 과민 중 3가지 이상 해당한 날(참고용, 진단 아님). 약 복용일은 그날 약을 한 번이라도 먹은 날 수.</div>`;
+}
+function summaryText(){
+  const S=summaryData();
+  const L=[`[두통 일지 요약] ${S.months[0]} ~ ${S.months[2]}`];
+  S.per.forEach(p=>L.push(`${mLabel(p.m)}: 두통 ${p.days}일 / 심한 날 ${p.severe}일 / 편두통 양상 ${p.mig}일 / 약 복용 ${p.med}일 / 평균 강도 ${p.avg==null?"-":p.avg.toFixed(1)} / 누워 지낸 날 ${p.impact}일`));
+  const ms=Object.entries(S.meds);if(ms.length){L.push("급성기 약:");ms.forEach(([k,r])=>{const rated=r.gone+r.less+r.none;L.push(` - ${k}: ${r.days.size}일 복용${rated?`, 2시간 내 사라짐 ${Math.round(r.gone/rated*100)}%`:""}`)})}
+  const tt=Object.entries(S.tc).sort((a,b)=>b[1]-a[1]).slice(0,4);if(tt.length)L.push("주요 유발 요인: "+tt.map(([k,v])=>`${k}(${v})`).join(", "));
+  if(S.periodDays)L.push(`생리 중 두통: ${S.periodDays}일`);
+  return L.join("\n");
+}
+async function copyText(t,btn,label){try{await navigator.clipboard.writeText(t);btn.textContent="복사됨"}
+  catch{const ta=document.createElement("textarea");ta.value=t;ta.setAttribute("readonly","");ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,t.length);try{document.execCommand("copy");btn.textContent="복사됨"}catch{}ta.remove()}
+  setTimeout(()=>btn.textContent=label,1800)}
+$("#sumBtn").onclick=()=>{const s=$("#summary");s.hidden=!s.hidden;if(!s.hidden){renderSummary();s.scrollIntoView({behavior:"smooth",block:"start"})}};
+$("#sumClose").onclick=()=>{$("#summary").hidden=true};
+$("#sumCopy").onclick=()=>copyText(summaryText(),$("#sumCopy"),"요약 복사");
+
+/* ---------- storage ---------- */
+function localStore(){
+  const K="headache-log-v1";const read=()=>{try{return JSON.parse(localStorage.getItem(K)||"{}")}catch{return{}}};
+  const write=o=>{try{localStorage.setItem(K,JSON.stringify(o))}catch{}};
+  return{start(cb){const o=read();cb(Object.entries(o).map(([id,d])=>({id,...d})))},
+    async put(id,d){const o=read();o[id]=d;write(o);this.start(sync)},async del(id){const o=read();delete o[id];write(o);this.start(sync)}};
+}
+function sync(list){entries=list;render();if(!$("#summary").hidden)renderSummary()}
+async function boot(){
+  resetForm();render();
+  store=localStore();store.start(sync);$("#status").textContent="이 기기 브라우저에 저장됨";
+  const b=$("#csvBtn");b.hidden=false;b.onclick=()=>{const u=URL.createObjectURL(new Blob([csv()],{type:"text/csv"}));
+    const a=document.createElement("a");a.href=u;a.download="두통일지_"+ymd(new Date())+".csv";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000)};
+}
+boot();
+})();
+</script>
+
+</body>
+</html>
