@@ -61,9 +61,30 @@ textarea{resize:vertical;min-height:56px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--chip);color:var(--ink);cursor:pointer}
 .chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-.meds{display:flex;flex-direction:column;gap:8px}
-.med{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.8fr) minmax(0,.9fr) minmax(0,1fr) auto;gap:6px;align-items:center}
-@media (max-width:480px){.med{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.pick{display:flex;flex-direction:column;gap:6px}
+.pick-btn{font:inherit;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);cursor:pointer;min-width:0}
+.pick-btn .nm{font-weight:600;font-size:15px}
+.pick-btn .ing{display:block;font-size:12px;color:var(--muted);font-weight:400;overflow-wrap:anywhere}
+.pick-btn .plus{font-family:var(--f-mono);font-size:18px;color:var(--accent);flex:none}
+.pick-btn.first{border-color:var(--accent)}
+.pick-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.meds{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.meds:empty{display:none}
+.med{border:1px solid var(--accent);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--paper)}
+.med-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.med-top .nm{font-weight:600}
+.med-top .ing{font-size:12px;color:var(--muted)}
+.med-fields{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1fr) minmax(0,1.3fr);gap:6px}
+.med-fields label{display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--muted);min-width:0}
+.kind{font-size:10px;padding:1px 6px;border-radius:999px;background:var(--chip);color:var(--muted);margin-left:4px;vertical-align:1px;font-weight:500}
+.mgr{border:1px dashed var(--line);border-radius:8px;padding:12px;margin-top:10px;display:flex;flex-direction:column;gap:10px}
+.mgr-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.mgr-item:last-of-type{border-bottom:none}
+.mgr-item .nm{font-weight:600}
+.mgr-item .ing{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.mgr-ops{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.mgr-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.mgr-form .wide{grid-column:1/-1}
 .btn{font:inherit;font-size:14px;font-weight:600;padding:9px 14px;border-radius:6px;border:1px solid var(--ink);background:var(--ink);color:var(--bg);cursor:pointer}
 .btn.ghost{background:transparent;color:var(--ink);border-color:var(--line);font-weight:500}
 .btn.small{font-size:12px;padding:5px 9px}
@@ -170,8 +191,13 @@ td.hot{color:var(--p4);font-weight:600}
 
         <div>
           <h3>복용한 약</h3>
+          <div class="pick" id="pick"></div>
           <div class="meds" id="meds"></div>
-          <button type="button" class="btn ghost small" id="addMed" style="margin-top:8px">+ 약 추가</button>
+          <div class="pick-row">
+            <button type="button" class="btn ghost small" id="addMed">+ 목록에 없는 약 직접 입력</button>
+            <button type="button" class="btn ghost small" id="mgrBtn" aria-expanded="false">내 약 목록 편집</button>
+          </div>
+          <div class="mgr" id="mgr" hidden></div>
         </div>
 
         <div><h3>일상생활 지장</h3><div class="chips" id="impact"></div></div>
@@ -263,17 +289,75 @@ IMPACT.forEach(o=>{const b=document.createElement("button");b.type="button";b.cl
 $("#f-period").onclick=()=>{period=!period;paintExtra()};
 function paintExtra(){$("#impact").querySelectorAll(".chip").forEach(b=>b.setAttribute("aria-pressed",String(b.textContent===impact)));
   $("#f-period").setAttribute("aria-pressed",String(period))}
+/* ---------- 내 약 목록 ---------- */
+const KINDS=["트립탄","트립탄+진통제","진통제","기타"];
+const DEFAULT_MEDS=[
+  {id:"m-sumavex",name:"수벡스정",ingredient:"수마트립탄숙신산염 119mg / 나프록센나트륨 500mg",dose:"1정",kind:"트립탄+진통제"},
+  {id:"m-nagran",name:"나그란구강붕해정 2.5mg",ingredient:"나라트립탄염산염 2.78mg",dose:"1정",kind:"트립탄"},
+  {id:"m-naramig",name:"나라믹정 2.5mg",ingredient:"나라트립탄염산염 2.78mg",dose:"1정",kind:"트립탄"}
+];
+const MK="headache-meds-v1";
+let medLib=(()=>{try{const v=JSON.parse(localStorage.getItem(MK));if(Array.isArray(v))return v}catch{}return DEFAULT_MEDS.map(m=>({...m}))})();
+function saveLib(){try{localStorage.setItem(MK,JSON.stringify(medLib))}catch{}}
+const libByName=n=>medLib.find(m=>m.name===n);
+function renderPick(){
+  const p=$("#pick");
+  p.innerHTML=medLib.length?"":`<div class="empty">등록된 약이 없습니다. "내 약 목록 편집"에서 추가하세요.</div>`;
+  medLib.forEach((m,i)=>{const b=document.createElement("button");b.type="button";b.className="pick-btn"+(i===0?" first":"");
+    b.innerHTML=`<span style="min-width:0"><span class="nm">${esc(m.name)}</span>${m.kind?`<span class="kind">${esc(m.kind)}</span>`:""}${m.ingredient?`<span class="ing">${esc(m.ingredient)}</span>`:""}</span><span class="plus" aria-hidden="true">＋</span>`;
+    b.setAttribute("aria-label",m.name+" 복용 추가");
+    b.onclick=()=>{const n=new Date();addMed({name:m.name,ingredient:m.ingredient,kind:m.kind,dose:m.dose||"1정",time:pad(n.getHours())+":"+pad(n.getMinutes())},true)};
+    p.appendChild(b)});
+}
+let mgrEdit=null;
+function renderMgr(){
+  const g=$("#mgr");if(g.hidden)return;
+  const items=medLib.map((m,i)=>`<div class="mgr-item"><div style="min-width:0"><div class="nm">${esc(m.name)}${m.kind?`<span class="kind">${esc(m.kind)}</span>`:""}</div><div class="ing">${esc(m.ingredient||"")}${m.dose?` · 기본 ${esc(m.dose)}`:""}</div></div>
+    <div class="mgr-ops" data-i="${i}"><button type="button" class="btn ghost small" data-a="up" ${i===0?"disabled":""} aria-label="위로">↑</button><button type="button" class="btn ghost small" data-a="down" ${i===medLib.length-1?"disabled":""} aria-label="아래로">↓</button><button type="button" class="btn ghost small" data-a="edit">수정</button><button type="button" class="btn ghost small" data-a="del">삭제</button></div></div>`).join("");
+  const cur=mgrEdit!=null&&mgrEdit>=0?medLib[mgrEdit]:{};
+  g.innerHTML=`<h3 style="margin:0">내 약 목록 · 위에 있을수록 먼저 보입니다</h3>${items||'<div class="empty">아직 없습니다.</div>'}
+    <div class="mgr-form">
+      <label class="f wide">약 이름<input type="text" id="lib-name" placeholder="예: 이미그란정 50mg" value="${esc(cur.name)}"></label>
+      <label class="f wide">성분·함량<input type="text" id="lib-ing" placeholder="예: 수마트립탄 50mg" value="${esc(cur.ingredient)}"></label>
+      <label class="f">기본 용량<input type="text" id="lib-dose" placeholder="1정" value="${esc(cur.dose||"1정")}"></label>
+      <label class="f">종류<select id="lib-kind">${KINDS.map(k=>`<option ${cur.kind===k?"selected":""}>${k}</option>`).join("")}</select></label>
+      <div class="actions wide"><button type="button" class="btn small" id="lib-save">${mgrEdit!=null&&mgrEdit>=0?"수정 저장":"목록에 추가"}</button>${mgrEdit!=null&&mgrEdit>=0?'<button type="button" class="btn ghost small" id="lib-cancel">취소</button>':""}<span class="msg" id="lib-msg"></span></div>
+    </div>`;
+  g.querySelectorAll(".mgr-ops button").forEach(b=>b.onclick=()=>{const i=+b.parentElement.dataset.i;const a=b.dataset.a;
+    if(a==="up"||a==="down"){const j=a==="up"?i-1:i+1;[medLib[i],medLib[j]]=[medLib[j],medLib[i]];saveLib();renderPick();renderMgr()}
+    else if(a==="edit"){mgrEdit=i;renderMgr();$("#lib-name").focus()}
+    else if(a==="del"){const ops=b.parentElement;ops.innerHTML=`<div class="confirm">목록에서 뺄까요?<button type="button" class="btn danger small">삭제</button><button type="button" class="btn ghost small">취소</button></div>`;
+      const [y,n]=ops.querySelectorAll("button");n.onclick=renderMgr;y.onclick=()=>{medLib.splice(i,1);if(mgrEdit===i)mgrEdit=null;saveLib();renderPick();renderMgr()}}});
+  $("#lib-save").onclick=()=>{const name=$("#lib-name").value.trim();if(!name){$("#lib-msg").textContent="약 이름을 입력해 주세요.";return}
+    const item={id:(mgrEdit!=null&&medLib[mgrEdit]?.id)||("m"+Date.now().toString(36)),name,ingredient:$("#lib-ing").value.trim(),dose:$("#lib-dose").value.trim()||"1정",kind:$("#lib-kind").value};
+    const dup=medLib.findIndex(m=>m.name===name);if(dup>=0&&dup!==mgrEdit){$("#lib-msg").textContent="같은 이름의 약이 이미 있습니다.";return}
+    if(mgrEdit!=null&&mgrEdit>=0)medLib[mgrEdit]=item;else medLib.push(item);mgrEdit=null;saveLib();renderPick();renderMgr();$("#lib-msg").textContent="저장했습니다."};
+  const c=$("#lib-cancel");if(c)c.onclick=()=>{mgrEdit=null;renderMgr()};
+}
+$("#mgrBtn").onclick=()=>{const g=$("#mgr");g.hidden=!g.hidden;$("#mgrBtn").setAttribute("aria-expanded",String(!g.hidden));$("#mgrBtn").textContent=g.hidden?"내 약 목록 편집":"목록 편집 닫기";mgrEdit=null;renderMgr()};
+
 let medSeq=0;
-function addMed(m={}){
+function addMed(m={},focusEffect){
   const id=++medSeq;const row=document.createElement("div");row.className="med";
-  row.innerHTML=`<input type="text" id="mn${id}" placeholder="약 이름 (예: 타이레놀)" aria-label="약 이름" value="${esc(m.name)}">
-   <input type="text" id="md${id}" placeholder="용량" aria-label="용량" value="${esc(m.dose)}">
-   <input type="time" id="mt${id}" aria-label="복용 시각" value="${esc(m.time)}">
-   <select id="me${id}" aria-label="효과"><option value="">효과(2시간 뒤)</option>${(m.effect&&!EFFECT.includes(m.effect)?[m.effect,...EFFECT]:EFFECT).map(e=>`<option ${m.effect===e?"selected":""}>${esc(e)}</option>`).join("")}</select>
-   <button type="button" class="btn ghost small" aria-label="이 약 삭제">✕</button>`;
-  row.querySelector("button").onclick=()=>row.remove();$("#meds").appendChild(row);
+  const lib=m.name?libByName(m.name):null;const ing=m.ingredient||lib?.ingredient||"";const kind=m.kind||lib?.kind||"";
+  const custom=!m.name||(!lib&&!m.ingredient&&m.custom!==false&&!m.fromRecord);
+  row.dataset.ing=ing;row.dataset.kind=kind;
+  const effs=m.effect&&!EFFECT.includes(m.effect)?[m.effect,...EFFECT]:EFFECT;
+  row.innerHTML=`<div class="med-top"><div style="min-width:0;flex:1">${custom?`<input type="text" id="mn${id}" class="mn" placeholder="약 이름 (예: 타이레놀 500mg)" aria-label="약 이름" value="${esc(m.name)}">`
+      :`<input type="hidden" class="mn" value="${esc(m.name)}"><div class="nm">${esc(m.name)}${kind?`<span class="kind">${esc(kind)}</span>`:""}</div>${ing?`<div class="ing">${esc(ing)}</div>`:""}`}</div>
+     <button type="button" class="btn ghost small rm" aria-label="이 약 빼기">✕</button></div>
+   <div class="med-fields">
+     <label>용량<input type="text" id="md${id}" class="md" list="doseList" value="${esc(m.dose||(custom?"":"1정"))}" placeholder="1정"></label>
+     <label>먹은 시각<input type="time" id="mt${id}" class="mt" value="${esc(m.time)}"></label>
+     <label>2시간 뒤 효과<select id="me${id}" class="me"><option value="">선택</option>${effs.map(e=>`<option ${m.effect===e?"selected":""}>${esc(e)}</option>`).join("")}</select></label>
+   </div>`;
+  row.querySelector(".rm").onclick=()=>row.remove();$("#meds").appendChild(row);
+  if(custom&&!m.name)row.querySelector(".mn").focus();
+  else if(focusEffect)row.scrollIntoView({behavior:"smooth",block:"nearest"});
 }
 $("#addMed").onclick=()=>addMed();
+document.body.insertAdjacentHTML("beforeend",'<datalist id="doseList"><option value="1정"><option value="0.5정"><option value="2정"></datalist>');
+renderPick();
 function resetForm(){
   editing=null;$("#form").reset();$("#f-date").value=ymd(new Date());
   const n=new Date();$("#f-time").value=pad(n.getHours())+":"+pad(n.getMinutes());
@@ -284,14 +368,14 @@ function loadForm(e){
   editing=e.id;$("#f-date").value=e.date;$("#f-time").value=e.time||"";$("#f-dur").value=e.durationMin?String(e.durationMin):"";
   intensity=e.intensity;paintScale();
   for(const g in sel){sel[g]=new Set(e[g]||[])}paintChips();impact=e.impact||"";period=!!e.period;paintExtra();
-  $("#meds").innerHTML="";(e.meds||[]).forEach(addMed);$("#f-memo").value=e.memo||"";
+  $("#meds").innerHTML="";(e.meds||[]).forEach(m=>addMed({...m,fromRecord:true}));$("#f-memo").value=e.memo||"";
   $("#saveBtn").textContent="수정 저장";$("#cancelEdit").hidden=false;$("#formTitle").textContent="기록 수정";
   $("#form").scrollIntoView({behavior:"smooth",block:"start"});
 }
 $("#cancelEdit").onclick=resetForm;
 $("#form").addEventListener("submit",async ev=>{
   ev.preventDefault();
-  const meds=[...$("#meds").children].map(r=>{const [n,d,t,e]=r.querySelectorAll("input,select");return{name:n.value.trim(),dose:d.value.trim(),time:t.value,effect:e.value}}).filter(m=>m.name);
+  const meds=[...$("#meds").children].map(r=>{const name=r.querySelector(".mn").value.trim();const lib=libByName(name);const o={name,dose:r.querySelector(".md").value.trim(),time:r.querySelector(".mt").value,effect:r.querySelector(".me").value};const ing=r.dataset.ing||lib?.ingredient;const kind=r.dataset.kind||lib?.kind;if(ing)o.ingredient=ing;if(kind)o.kind=kind;return o}).filter(m=>m.name);
   const data={date:$("#f-date").value,time:$("#f-time").value,durationMin:+$("#f-dur").value||null,intensity,
     sites:[...sel.sites],quality:[...sel.quality],symptoms:[...sel.symptoms],triggers:[...sel.triggers],meds,impact,period,memo:$("#f-memo").value.trim(),
     updatedAt:new Date().toISOString()};
@@ -346,7 +430,7 @@ function renderList(){
   const me=monthEntries().sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));
   const list=$("#list");
   if(!me.length){
-    const ex={date:ymd(new Date()),time:"14:30",durationMin:240,intensity:6,sites:["오른쪽 관자놀이","눈 뒤"],quality:["욱신욱신(박동성)"],symptoms:["빛에 예민"],triggers:["수면 부족","끼니 거름"],meds:[{name:"타이레놀",dose:"500mg",time:"15:00",effect:"조금"}],memo:""};
+    const ex={date:ymd(new Date()),time:"14:30",durationMin:240,intensity:6,sites:["오른쪽 관자놀이","눈 뒤"],quality:["욱신욱신(박동성)"],symptoms:["빛에 예민"],triggers:["수면 부족","끼니 거름"],meds:[{name:"수벡스정",dose:"1정",time:"15:00",effect:"2시간 내 줄어듦"}],memo:""};
     list.innerHTML=`<div class="empty">${entries.length?"이 달에는 기록이 없습니다.":"아직 기록이 없습니다. 왼쪽에서 첫 두통을 기록하면 여기와 달력에 쌓입니다."}</div>`+
       (entries.length?"":`<div class="example-label">예시</div><div class="example">${entryHTML(ex,true)}</div>`);return}
   list.innerHTML=me.map(e=>entryHTML(e,false)).join("");
@@ -401,7 +485,7 @@ function summaryData(){
     return{m,days:dv.length,severe:dv.filter(d=>d.max>=7).length,med:dv.filter(d=>d.med).length,
       avg:es.length?es.reduce((s,e)=>s+e.intensity,0)/es.length:null,mig:new Set(es.filter(migraineLike).map(e=>e.date)).size,
       impact:new Set(es.filter(e=>e.impact==="쉬거나 누워 있음").map(e=>e.date)).size}});
-  const meds={};inR.forEach(e=>(e.meds||[]).forEach(x=>{const k=x.name.trim();if(!k)return;const r=meds[k]||(meds[k]={days:new Set(),n:0,gone:0,less:0,none:0});
+  const meds={};inR.forEach(e=>(e.meds||[]).forEach(x=>{const k=x.name.trim();if(!k)return;const r=meds[k]||(meds[k]={days:new Set(),n:0,gone:0,less:0,none:0,kind:x.kind||libByName(k)?.kind||""});
     r.days.add(e.date);r.n++;if(x.effect==="2시간 내 사라짐"||x.effect==="효과 있음")r.gone++;else if(x.effect==="2시간 내 줄어듦"||x.effect==="조금")r.less++;else if(x.effect==="효과 없음")r.none++}));
   const tc={};inR.forEach(e=>(e.triggers||[]).forEach(t=>tc[t]=(tc[t]||0)+1));
   const durs=inR.map(e=>e.durationMin).filter(Boolean).sort((a,b)=>a-b);
@@ -416,7 +500,7 @@ function renderSummary(){
   const avgDays=S.per.reduce((s,p)=>s+p.days,0)/3;
   const rows=S.per.map(p=>`<tr><td>${mLabel(p.m)}</td><td class="num${p.days>=15?" hot":""}">${p.days}</td><td class="num">${p.severe}</td><td class="num">${p.mig}</td><td class="num${p.med>=10?" hot":""}">${p.med}</td><td class="num">${p.avg==null?"–":p.avg.toFixed(1)}</td><td class="num">${p.impact}</td></tr>`).join("");
   const medRows=Object.entries(S.meds).sort((a,b)=>b[1].days.size-a[1].days.size).map(([k,r])=>{const rated=r.gone+r.less+r.none;
-    return `<tr><td>${esc(k)}</td><td class="num">${r.days.size}</td><td class="num">${r.n}</td><td class="num">${rated?Math.round(r.gone/rated*100)+"%":"–"}</td><td class="num">${rated?Math.round(r.none/rated*100)+"%":"–"}</td></tr>`}).join("");
+    return `<tr><td>${esc(k)}</td><td>${esc(r.kind||"")}</td><td class="num">${r.days.size}</td><td class="num">${r.n}</td><td class="num">${rated?Math.round(r.gone/rated*100)+"%":"–"}</td><td class="num">${rated?Math.round(r.none/rated*100)+"%":"–"}</td></tr>`}).join("");
   const top=(o,n)=>Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,n);
   const med=S.durs.length?S.durs[Math.floor(S.durs.length/2)]:null;
   const warn=[];
@@ -425,7 +509,7 @@ function renderSummary(){
   $("#sumBody").innerHTML=`
   <h3>월별 경과</h3>
   <div class="tbl-wrap"><table><thead><tr><th>월</th><th>두통 일수</th><th>심한 날(7+)</th><th>편두통 양상</th><th>약 복용일</th><th>평균 강도</th><th>누워 지낸 날</th></tr></thead><tbody>${rows}</tbody></table></div>
-  ${medRows?`<h3>급성기 약</h3><div class="tbl-wrap"><table><thead><tr><th>약</th><th>복용 일수</th><th>복용 횟수</th><th>2시간 내 사라짐</th><th>효과 없음</th></tr></thead><tbody>${medRows}</tbody></table></div>`:""}
+  ${medRows?`<h3>급성기 약</h3><div class="tbl-wrap"><table><thead><tr><th>약</th><th>종류</th><th>복용 일수</th><th>복용 횟수</th><th>2시간 내 사라짐</th><th>효과 없음</th></tr></thead><tbody>${medRows}</tbody></table></div>`:""}
   <div class="sum-grid">
     <div><h3>한눈에</h3>
       <div class="kv"><span>월평균 두통 일수</span><b>${avgDays.toFixed(1)}일</b></div>
