@@ -386,6 +386,12 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .modal{position:fixed;inset:0;z-index:60;background:rgba(40,20,25,.45);display:flex;align-items:flex-end;justify-content:center;padding:0 max(12px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 12px) max(12px,env(safe-area-inset-left,0px))}
 .modal .sheet{background:var(--card);border-radius:26px;padding:22px;max-width:520px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.2)}
 .modal h2{color:var(--danger)}
+.updbar{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 10px);z-index:45;background:var(--ink);color:var(--bg);border-radius:16px;padding:8px 8px 8px 16px;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.18);max-width:calc(100% - 32px)}
+.updbar .btn.ghost{background:transparent;color:var(--bg)}
+.member{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.member:first-child{border-top:none}
+.member .nm{font-weight:700;overflow-wrap:anywhere}.member .dt{font-size:12px;color:var(--muted)}
+.code{font-family:ui-monospace,Menlo,monospace;font-size:26px;font-weight:700;letter-spacing:.18em;background:var(--soft);border-radius:14px;padding:10px 14px;text-align:center;user-select:all;-webkit-user-select:all}
 </style>
 </head>
 <body>
@@ -756,6 +762,11 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 
   <!-- 정보 -->
   <div class="sub-panel" data-subpanel="info" hidden>
+  <section class="panel" id="sp-panel">
+    <h2>가족과 함께 기록</h2>
+    <div class="fine" style="margin:-6px 0 12px">공유 공간을 만들면 가족이 <b>각자 계정</b>으로 마루 기록만 함께 보고 쓸 수 있어요. 두통·생리 기록은 공유되지 않아요.</div>
+    <div id="sp-body"></div>
+  </section>
   <section class="panel emer">
     <div class="monthbar"><h2>응급 카드</h2><button class="btn ghost small" id="er-copy" type="button">복사</button></div>
     <div id="er-body"></div>
@@ -871,10 +882,11 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 
   <section class="panel" aria-labelledby="bkTitle">
     <h2 id="bkTitle">백업</h2>
-    <div class="fine" style="margin:-6px 0 14px">동기화를 쓰지 않을 때는 기록이 이 기기에만 저장돼요. 다른 기기로 옮기려면 여기서 백업 파일을 저장하고, 그 기기에서 '합치기'로 불러오세요. 사진은 백업 파일에 들어가지 않아요.</div>
+    <div class="fine" style="margin:-6px 0 14px">동기화를 쓰지 않을 때는 기록이 이 기기에만 저장돼요. 다른 기기로 옮기려면 여기서 백업 파일을 저장하고, 그 기기에서 '합치기'로 불러오세요. 사진은 아래 체크를 켜면 함께 들어가요.</div>
     <div class="actions">
       <button class="btn" id="bkSave" type="button">전체 백업 파일 저장</button>
       <button class="btn ghost" id="bkLoad" type="button">백업 불러오기</button>
+      <label class="sw" style="width:100%"><input type="checkbox" id="bkPhotos">사진도 함께 저장 (파일이 커져요)</label>
       <input type="file" id="bkIn" accept="application/json,.json" hidden>
     </div>
     <div id="bkConfirm"></div>
@@ -902,6 +914,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   <button type="button" data-tab="summary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>요약</button>
 </div></nav>
 <div class="toast" id="toast" hidden></div>
+<div class="updbar" id="updBar" hidden role="status"><span>새 버전이 나왔어요</span><button type="button" class="btn small" id="updGo">새로고침</button><button type="button" class="btn ghost small" id="updX" aria-label="닫기">✕</button></div>
 <div class="viewer" id="viewer" hidden><img id="viewerImg" alt=""><button class="btn small close" type="button" id="viewerClose">닫기</button></div>
 <datalist id="doseList"><option value="1정"><option value="0.5정"><option value="2정"></datalist>
 
@@ -910,6 +923,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 /* ▼ Firebase 설정: 콘솔에서 복사한 firebaseConfig 값을 null 대신 붙여 넣으세요. null이면 동기화 없이 이 기기에만 저장합니다. */
+const APP_VERSION = "2026.11.11-3";
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAdpDPCS0AqXbDzkpWAdPj5Pb8rj7kJTu0",
   authDomain: "juhee-note.firebaseapp.com",
@@ -1490,17 +1504,26 @@ $("#msumCopy").onclick=()=>copyText(maruSummaryText(),$("#msumCopy"),"요약 복
 
 /* ---------- 백업 ---------- */
 const HK="headache-log-v1";
-$("#bkSave").onclick=()=>{let h={};try{h=JSON.parse(localStorage.getItem(HK)||"{}")}catch{}
-  downloadFile(`주희노트_백업_${ymd(new Date())}.json`,JSON.stringify({app:"juhee-note",version:1,savedAt:new Date().toISOString(),headache:h,meds:medLib,checkins,hx,maru:{...maru,profile:{...maru.profile,photoId:undefined}}}),"application/json");
-  toast("백업 파일을 저장했어요")};
+$("#bkSave").onclick=async()=>{let h={};try{h=JSON.parse(localStorage.getItem(HK)||"{}")}catch{}
+  const withPh=$("#bkPhotos").checked,btn=$("#bkSave");const photos={};
+  if(withPh){btn.disabled=true;btn.textContent="사진 모으는 중…";
+    for(const id of allPhotoIds()){try{let b=await idb.get(id);if(!b)b=await pullPhoto(id);if(b)photos[id]=await blobToDataURL(b)}catch{}}
+    btn.disabled=false;btn.textContent="전체 백업 파일 저장"}
+  const body={app:"juhee-note",version:2,savedAt:new Date().toISOString(),headache:h,meds:medLib,checkins,hx,maru:withPh?maru:{...maru,profile:{...maru.profile,photoId:undefined}}};
+  if(withPh)body.photos=photos;
+  downloadFile(`주희노트_백업_${ymd(new Date())}.json`,JSON.stringify(body),"application/json");
+  toast(withPh?`백업 파일을 저장했어요 · 사진 ${Object.keys(photos).length}장 포함`:"백업 파일을 저장했어요")};
+async function restorePhotos(d){const ph=d.photos||{};let n=0;
+  for(const [id,url] of Object.entries(ph)){try{if(await idb.get(id))continue;const b=await (await fetch(url)).blob();await idb.put(id,b);n++;if(SYNC.on)pushPhoto(id,b)}catch{}}
+  return n}
 $("#bkLoad").onclick=()=>$("#bkIn").click();
 $("#bkIn").onchange=async ev=>{const f=ev.target.files[0];ev.target.value="";if(!f)return;let d;
   try{d=JSON.parse(await f.text());if(d.app!=="juhee-note")throw 0}catch{$("#bkConfirm").innerHTML='<div class="note">이 앱의 백업 파일이 아니에요. "주희노트_백업"으로 시작하는 파일을 골라 주세요.</div>';return}
-  const hn=Object.keys(d.headache||{}).length,vn=Object.keys(d.maru?.visits||{}).length;
-  $("#bkConfirm").innerHTML=`<div class="note">${kDot((d.savedAt||"").slice(0,10))} 백업 · 두통 ${hn}건, 병원 ${vn}건. 어떻게 불러올까요?<div class="fine" style="color:inherit;margin-top:6px"><b>합치기</b>: 이 기기 기록은 그대로 두고 백업에만 있는 기록을 더해요. 같은 기록은 나중에 고친 쪽을 남겨요.<br><b>바꾸기</b>: 이 기기 기록을 지우고 백업 내용으로 바꿔요.</div><div class="actions" style="margin-top:10px"><button type="button" class="btn small" id="bkMerge">합치기</button><button type="button" class="btn ghost small" id="bkYes">바꾸기</button><button type="button" class="btn ghost small" id="bkNo">취소</button></div></div>`;
-  $("#bkMerge").onclick=()=>{try{const r=mergeBackup(d);schedulePush();$("#bkConfirm").innerHTML="";store.start(sync);renderPick();renderMaru();renderHx();toast(`합쳤어요 · 두통 ${r.addH}건, 병원 ${r.addV}건 추가`)}catch{toast("불러오지 못했어요")}};
+  const hn=Object.keys(d.headache||{}).length,vn=Object.keys(d.maru?.visits||{}).length,pn=Object.keys(d.photos||{}).length;
+  $("#bkConfirm").innerHTML=`<div class="note">${kDot((d.savedAt||"").slice(0,10))} 백업 · 두통 ${hn}건, 병원 ${vn}건${pn?`, 사진 ${pn}장`:""}. 어떻게 불러올까요?<div class="fine" style="color:inherit;margin-top:6px"><b>합치기</b>: 이 기기 기록은 그대로 두고 백업에만 있는 기록을 더해요. 같은 기록은 나중에 고친 쪽을 남겨요.<br><b>바꾸기</b>: 이 기기 기록을 지우고 백업 내용으로 바꿔요.</div><div class="actions" style="margin-top:10px"><button type="button" class="btn small" id="bkMerge">합치기</button><button type="button" class="btn ghost small" id="bkYes">바꾸기</button><button type="button" class="btn ghost small" id="bkNo">취소</button></div></div>`;
+  $("#bkMerge").onclick=async()=>{await restorePhotos(d);try{if(d.photos&&d.maru&&d.maru.profile&&d.maru.profile.photoId&&!maru.profile.photoId)maru.profile.photoId=d.maru.profile.photoId;const r=mergeBackup(d);schedulePush();$("#bkConfirm").innerHTML="";store.start(sync);renderPick();renderMaru();renderHx();toast(`합쳤어요 · 두통 ${r.addH}건, 병원 ${r.addV}건 추가`)}catch{toast("불러오지 못했어요")}};
   $("#bkNo").onclick=()=>$("#bkConfirm").innerHTML="";
-  $("#bkYes").onclick=()=>{try{const photo=maru.profile.photoId;localStorage.setItem(HK,JSON.stringify(d.headache||{}));if(Array.isArray(d.meds))localStorage.setItem(MK,JSON.stringify(d.meds));
+  $("#bkYes").onclick=async()=>{await restorePhotos(d);try{const photo=d.photos&&d.maru&&d.maru.profile&&d.maru.profile.photoId||maru.profile.photoId;localStorage.setItem(HK,JSON.stringify(d.headache||{}));if(Array.isArray(d.meds))localStorage.setItem(MK,JSON.stringify(d.meds));
     const m=normMaru(d.maru);if(photo)m.profile.photoId=photo;localStorage.setItem(MARU_K,JSON.stringify(m));localStorage.setItem(CI_K,JSON.stringify(d.checkins||{}));localStorage.setItem(HX_K,JSON.stringify(normHx(d.hx)));checkins=d.checkins||{};hx=normHx(d.hx);if(SYNC.on){maru=m;try{medLib=JSON.parse(localStorage.getItem(MK))||medLib}catch{}pushDiff().finally(()=>location.reload())}else location.reload()}catch{toast("불러오지 못했어요")}}};
 $("#csvBtn").onclick=()=>downloadFile("두통일지_"+ymd(new Date())+".csv",csv(),"text/csv");
 $("#ecsvBtn").onclick=()=>{const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
@@ -2166,17 +2189,19 @@ function mergeMeta(id,l,r){
 /* ---------- PC·폰 동기화 (Firebase) ----------
    문서마다 서버 시각(_t)을 붙이고, 지운 기록은 삭제 표시(_del)로 남긴다.
    앱을 열 때는 마지막으로 받은 뒤 바뀐 문서만 읽어서 무료 한도를 아낀다. */
-const COLS=["h","v","w","m","e","x","c"];
-const SYNC={on:false,uid:null,email:"",known:{},cursor:{},unsubs:[],pushing:false,again:false,state:"off"};
+const COLS=["h","c","m","v","w","e","x","mm"];
+const MARU_COLS=["v","w","e","x","mm","p"];
+const SYNC={on:false,uid:null,email:"",known:{},cursor:{},unsubs:[],pushing:false,again:false,state:"off",space:"",spaceNext:null};
 let fb=null,fbReason="";
 const sig=o=>JSON.stringify(o,(k,v)=>v&&typeof v==="object"&&!Array.isArray(v)?Object.keys(v).sort().reduce((a,x)=>(a[x]=v[x],a),{}):v);
 const clean=o=>JSON.parse(JSON.stringify(o===undefined?null:o));
 const strip=d=>{const o={...d};delete o._t;delete o._del;return o};
 function readH(){try{return JSON.parse(localStorage.getItem(HK)||"{}")}catch{return{}}}
 function localState(){return{h:readH(),v:{...maru.visits},w:{...maru.weights},e:{...maru.events},x:{...maru.rx},c:{...checkins},
-  m:{profile:clean(maru.profile),schedule:{list:clean(maru.schedule)},meds:{list:clean(medLib)},routines:{list:clean(maru.routines)},food:clean(maru.food),
-     cycle:clean(hx.cycle),prev:clean(hx.prev),clinic:clean(hx.clinic),surveys:clean(hx.surveys)}}}
-const colRef=c=>fb.db.collection("users").doc(SYNC.uid).collection(c);
+  m:{meds:{list:clean(medLib)},cycle:clean(hx.cycle),prev:clean(hx.prev),clinic:clean(hx.clinic),surveys:clean(hx.surveys),space:{id:SYNC.space||""}},
+  mm:{profile:clean(maru.profile),schedule:{list:clean(maru.schedule)},routines:{list:clean(maru.routines)},food:clean(maru.food)}}}
+const colRef=c=>MARU_COLS.includes(c)&&SYNC.space?fb.db.collection("spaces").doc(SYNC.space).collection(c):fb.db.collection("users").doc(SYNC.uid).collection(c);
+const spaceKey=()=>"maru-space-"+SYNC.uid;
 const metaKey=()=>"sync2-"+SYNC.uid;
 function loadMeta(){let o=null;try{o=JSON.parse(localStorage.getItem(metaKey())||"null")}catch{}
   o=o||{known:{},cursor:{}};COLS.forEach(c=>{o.known[c]=o.known[c]||{};o.cursor[c]=o.cursor[c]||0});return o}
@@ -2207,9 +2232,10 @@ function applyOne(c,id,val,h){
   if(c==="h"){if(val===null)delete h[id];else h[id]=val;return}
   if(c==="c"){if(val===null)delete checkins[id];else checkins[id]=val;return}
   if(c==="m"&&val&&["cycle","prev","clinic","surveys"].includes(id)){hx[id]=normHx({[id]:val})[id];return}
+  if(c==="m"&&id==="space"){const nid=(val&&val.id)||"";if(nid!==SYNC.space)SYNC.spaceNext=nid;return}
   const map={v:"visits",w:"weights",e:"events",x:"rx"}[c];
   if(map){if(val===null)delete maru[map][id];else maru[map][id]=val;return}
-  if(c==="m"&&val){if(id==="profile")maru.profile={...val,photoId:val.photoId||maru.profile.photoId};else if(id==="schedule")maru.schedule=val.list||[];
+  if((c==="m"||c==="mm")&&val){if(id==="profile")maru.profile={...val,photoId:val.photoId||maru.profile.photoId};else if(id==="schedule")maru.schedule=val.list||[];
     else if(id==="meds")medLib=val.list||[];else if(id==="routines")maru.routines=val.list||[];else if(id==="food")maru.food=val||{}}
 }
 function persistAndRender(h){
@@ -2223,14 +2249,14 @@ function takeRemote(c,id,rd,cur,h,first){
   const r=strip(rd),rs=sig(r);
   if(l===undefined){if(kn[id]!==undefined)return false;applyOne(c,id,r,h);kn[id]=rs;return true}   // 이 기기에서 지운 건 그대로 둠(삭제 표시가 올라감)
   const ls=sig(l);if(ls===rs){kn[id]=rs;return false}
-  if(c==="m"&&kn[id]===undefined){applyOne(c,id,mergeMeta(id,l,r),h);kn[id]=rs;return true}        // 처음 만나는 프로필 등은 합침
+  if((c==="m"||c==="mm")&&kn[id]===undefined&&id!=="space"){applyOne(c,id,mergeMeta(id,l,r),h);kn[id]=rs;return true}        // 처음 만나는 프로필 등은 합침
   if(!first&&ls!==kn[id])return false;                                                             // 이 기기에서 고친 뒤 아직 안 올라감 → 내 것이 이김
   const remoteWins=kn[id]===rs?false:kn[id]===ls?true:((r.updatedAt||"")>=(l.updatedAt||""));
   if(remoteWins){applyOne(c,id,r,h);kn[id]=rs;return true}
   kn[id]=rs;return false;
 }
 async function startSync(user){
-  SYNC.uid=user.uid;SYNC.email=user.email||"";const meta=loadMeta();SYNC.known=meta.known;SYNC.cursor=meta.cursor;SYNC.on=true;SYNC.ready=false;renderSyncCard();setSync("busy");
+  SYNC.uid=user.uid;SYNC.email=user.email||"";try{SYNC.space=localStorage.getItem(spaceKey())||""}catch{SYNC.space=""}SYNC.spaceNext=null;const meta=loadMeta();SYNC.known=meta.known;SYNC.cursor=meta.cursor;SYNC.on=true;SYNC.ready=false;renderSyncCard();setSync("busy");
   const TS=firebase.firestore.Timestamp;
   try{
     const remote={},full={};
@@ -2243,16 +2269,27 @@ async function startSync(user){
     COLS.forEach(c=>{if(full[c])Object.entries(remote[c]).forEach(([id,rd])=>{if(!rd._t&&!rd._del)delete SYNC.known[c][id]})});
     try{localStorage.removeItem("sync-known-"+SYNC.uid)}catch{}
     saveMeta();if(changed)persistAndRender(h);
+    if(SYNC.spaceNext!==null&&SYNC.spaceNext!==SYNC.space){const n=SYNC.spaceNext;SYNC.spaceNext=null;return switchSpace(n,true)}
     SYNC.ready=true;await pushDiff();
     COLS.forEach(c=>SYNC.unsubs.push(colRef(c).where("_t",">",TS.fromMillis(Math.max(0,SYNC.cursor[c]-60000))).onSnapshot(snap=>{
       const h2=readH();const cur2=localState();let ch=false;
       snap.docChanges().forEach(x=>{if(x.type==="removed")return;const rd=x.doc.data();bump(c,rd._t);if(takeRemote(c,x.doc.id,rd,cur2,h2,false))ch=true});
       saveMeta();if(ch)persistAndRender(h2);
+      if(SYNC.spaceNext!==null&&SYNC.spaceNext!==SYNC.space){const n=SYNC.spaceNext;SYNC.spaceNext=null;switchSpace(n,true);return}
       if(!snap.metadata.hasPendingWrites&&SYNC.state!=="err"&&!SYNC.pushing)setSync("ok");
-    },()=>setSync("err","연결이 끊겼어요. 앱을 다시 열어 주세요."))));
+    },e=>{if(e&&e.code==="permission-denied"&&SYNC.space&&MARU_COLS.includes(c)){toast("마루 공유 공간에 더 이상 들어갈 수 없어요. 내 기록으로 돌아갈게요");switchSpace("",false)}else setSync("err","연결이 끊겼어요. 앱을 다시 열어 주세요.")})));
     if(SYNC.state==="busy")setSync("ok");
     uploadMissingPhotos();
-  }catch(e){setSync("err","동기화를 시작하지 못했어요. 인터넷 연결을 확인해 주세요.");setTimeout(()=>{if(SYNC.uid===user.uid){stopSync(true);startSync(user)}},20000)}
+  }catch(e){if(e&&e.code==="permission-denied"&&SYNC.space){toast("마루 공유 공간에 더 이상 들어갈 수 없어요. 내 기록으로 돌아갈게요");return switchSpace("",false)}
+    setSync("err","동기화를 시작하지 못했어요. 인터넷 연결을 확인해 주세요.");setTimeout(()=>{if(SYNC.uid===user.uid){stopSync(true);startSync(user)}},20000)}
+}
+/* 마루 기록을 공유 공간(또는 내 계정)으로 옮겨 다시 동기화 */
+async function switchSpace(id,fromRemote){
+  SYNC.space=id||"";try{localStorage.setItem(spaceKey(),SYNC.space)}catch{}
+  const meta=loadMeta();MARU_COLS.forEach(c=>{meta.known[c]={};meta.cursor[c]=0});SYNC.known=meta.known;SYNC.cursor=meta.cursor;saveMeta();
+  try{localStorage.removeItem(PSK+"-"+SYNC.uid)}catch{}
+  const u=fb&&fb.auth.currentUser;stopSync(true);renderSpace();if(u)await startSync(u);
+  if(fromRemote)toast(id?"마루 공유 공간에 연결했어요":"마루 기록을 내 계정으로 돌렸어요");
 }
 function stopSync(keepUser){SYNC.unsubs.forEach(u=>{try{u()}catch{}});SYNC.unsubs=[];SYNC.on=false;SYNC.ready=false;if(!keepUser){SYNC.uid=null;SYNC.email=""}setSync("off");renderSyncCard()}
 
@@ -2270,17 +2307,107 @@ function allPhotoIds(){const ids=[];if(maru.profile.photoId)ids.push(maru.profil
 async function uploadMissingPhotos(){const done=photoSynced();for(const id of allPhotoIds()){if(done.has(id))continue;try{const b=await idb.get(id);if(b)await pushPhoto(id,b)}catch{}}}
 function delPhoto(id){idb.del(id).catch(()=>{});if(urlCache[id]){URL.revokeObjectURL(urlCache[id]);delete urlCache[id]}if(SYNC.on){colRef("p").doc(id).delete().catch(()=>{});markPhoto(id,false)}}
 
+
+/* ---------- 1. 마루 공유 공간 ---------- */
+const CODE_CH="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const newCode=()=>[...crypto.getRandomValues(new Uint8Array(6))].map(n=>CODE_CH[n%CODE_CH.length]).join("");
+let spMembers=[],spOwner="",spCode=null;
+async function loadMembers(){if(!SYNC.space)return;try{const sd=await fb.db.collection("spaces").doc(SYNC.space).get();spOwner=sd.exists?sd.data().owner:"";
+  const qs=await fb.db.collection("spaces").doc(SYNC.space).collection("members").get();spMembers=[];qs.forEach(d=>spMembers.push({uid:d.id,...d.data()}))}catch{spMembers=[]}renderSpace(true)}
+function renderSpace(skipLoad){const box=$("#sp-body");if(!box)return;
+  if(!fb){box.innerHTML='<div class="empty">동기화 설정이 있어야 쓸 수 있어요.</div>';return}
+  if(!SYNC.uid){box.innerHTML=`<div class="empty">'요약' 탭의 PC·폰 동기화에서 로그인하면 쓸 수 있어요.</div>`;return}
+  if(!SYNC.space){box.innerHTML=`<div class="actions"><button type="button" class="btn" id="sp-create">공유 공간 만들기</button></div>
+    <h3 style="margin-top:16px">초대 코드를 받았나요?</h3>
+    <div class="wadd" style="grid-template-columns:minmax(0,1fr) auto;margin-top:0"><input type="text" id="sp-code" placeholder="6자리 코드" autocapitalize="characters" autocomplete="off" maxlength="6" aria-label="초대 코드"><button type="button" class="btn" id="sp-join">참여</button></div>
+    <div class="fine">참여하면 이 기기의 마루 기록이 공유 공간에 합쳐져요.</div><div class="msg" id="sp-msg" style="color:var(--danger)"></div>`;
+    $("#sp-create").onclick=createSpace;$("#sp-join").onclick=joinSpace;return}
+  const me=SYNC.uid,isOwner=spOwner===me;
+  box.innerHTML=`<h3>함께 기록하는 사람</h3><div>${spMembers.length?spMembers.map(m=>`<div class="member"><div style="min-width:0"><div class="nm">${esc(m.name||m.email||"이름 없음")}${m.uid===me?' <span class="tag acc">나</span>':""}${m.uid===spOwner?' <span class="tag">만든 사람</span>':""}</div>${m.name?`<div class="dt">${esc(m.email||"")}</div>`:""}</div>
+      ${isOwner&&m.uid!==me?`<button type="button" class="btn ghost small" data-kick="${esc(m.uid)}">내보내기</button>`:"<span></span>"}</div>`).join(""):'<div class="fine">불러오는 중…</div>'}</div>
+    <div class="actions" style="margin-top:14px"><button type="button" class="btn" id="sp-invite">초대 코드 만들기</button><button type="button" class="btn ghost" id="sp-leave">공유 공간 나가기</button></div>
+    <div id="sp-codebox"></div>`;
+  box.querySelectorAll("[data-kick]").forEach(b=>b.onclick=async()=>{try{await fb.db.collection("spaces").doc(SYNC.space).collection("members").doc(b.dataset.kick).delete();toast("내보냈어요");loadMembers()}catch{toast("내보내지 못했어요")}});
+  $("#sp-invite").onclick=makeInvite;
+  $("#sp-leave").onclick=()=>{const a=$("#sp-leave").parentElement;a.innerHTML=`<div class="confirm" style="justify-content:flex-start">나가면 이 기기는 마루 기록을 내 계정에만 저장해요. 지금 기록은 이 기기에 남아요.<button type="button" class="btn danger small" id="sp-leaveY">나가기</button><button type="button" class="btn ghost small" id="sp-leaveN">취소</button></div>`;
+    $("#sp-leaveN").onclick=()=>renderSpace(true);
+    $("#sp-leaveY").onclick=async()=>{try{await fb.db.collection("spaces").doc(SYNC.space).collection("members").doc(SYNC.uid).delete()}catch{}spMembers=[];await switchSpace("",false);toast("공유 공간에서 나왔어요")}};
+  if(spCode)showCode(spCode);
+  if(!skipLoad)loadMembers();
+}
+function showCode(c){spCode=c;const box=$("#sp-codebox");if(!box)return;
+  box.innerHTML=`<div style="margin-top:14px"><div class="code" id="sp-codev">${c}</div><div class="fine">7일 동안 쓸 수 있어요. 가족에게 이 앱 주소와 함께 보내 주세요. 가족은 각자 계정으로 가입한 뒤 마루 → 정보 → '초대 코드를 받았나요?'에 입력하면 돼요.</div>
+    <div class="actions" style="margin-top:8px"><button type="button" class="btn ghost small" id="sp-copy">안내 문구 복사</button></div></div>`;
+  $("#sp-copy").onclick=()=>copyText(`${maru.profile.name||"마루"} 기록을 같이 써요!\n1) ${location.origin+location.pathname} 접속 (아이폰은 공유 → 홈 화면에 추가)\n2) 요약 탭에서 가입·로그인\n3) 마루 → 정보 → 초대 코드 입력: ${c}\n(7일 안에 입력해 주세요)`,$("#sp-copy"),"안내 문구 복사")}
+async function createSpace(){const b=$("#sp-create");b.disabled=true;
+  try{const ref=fb.db.collection("spaces").doc();await ref.set({owner:SYNC.uid,name:maru.profile.name||"마루",createdAt:new Date().toISOString()});
+    await ref.collection("members").doc(SYNC.uid).set({email:SYNC.email,name:who()||"",role:"owner",joinedAt:new Date().toISOString()});
+    spOwner=SYNC.uid;await switchSpace(ref.id,false);toast("공유 공간을 만들었어요. 초대 코드를 만들어 가족을 불러 보세요");loadMembers()}
+  catch(e){toast(e&&e.code==="permission-denied"?"Firestore 규칙을 새로 게시해야 해요. 안내를 확인해 주세요":"만들지 못했어요. 인터넷 연결을 확인해 주세요");b.disabled=false}}
+async function joinSpace(){const code=($("#sp-code").value||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"");const msg=$("#sp-msg");msg.textContent="";
+  if(code.length!==6){msg.textContent="6자리 코드를 넣어 주세요.";return}
+  const b=$("#sp-join");b.disabled=true;
+  try{const inv=await fb.db.collection("invites").doc(code).get();
+    if(!inv.exists){msg.textContent="코드가 맞지 않아요. 다시 확인해 주세요.";return}
+    const d=inv.data();if(tsMs(d.expires)&&tsMs(d.expires)<Date.now()){msg.textContent="기간이 지난 코드예요. 새 코드를 받아 주세요.";return}
+    await fb.db.collection("spaces").doc(d.spaceId).collection("members").doc(SYNC.uid).set({code,email:SYNC.email,name:who()||"",role:"member",joinedAt:new Date().toISOString()});
+    await switchSpace(d.spaceId,false);toast("공유 공간에 들어왔어요");loadMembers()}
+  catch(e){msg.textContent=e&&e.code==="permission-denied"?"들어가지 못했어요. 코드가 맞는지, 기간이 지나지 않았는지 확인해 주세요.":"참여하지 못했어요. 인터넷 연결을 확인해 주세요."}
+  finally{b.disabled=false}}
+async function makeInvite(){const b=$("#sp-invite");b.disabled=true;
+  try{const c=newCode();await fb.db.collection("invites").doc(c).set({spaceId:SYNC.space,by:SYNC.uid,expires:firebase.firestore.Timestamp.fromMillis(Date.now()+7*86400000)});showCode(c)}
+  catch{toast("코드를 만들지 못했어요")}finally{b.disabled=false}}
+
 /* 로그인 카드 */
 const AUTH_MSG={"auth/invalid-email":"이메일 형식을 확인해 주세요.","auth/invalid-credential":"이메일 또는 비밀번호가 맞지 않아요.","auth/wrong-password":"이메일 또는 비밀번호가 맞지 않아요.",
   "auth/user-not-found":"가입된 이메일이 없어요. '처음이에요'로 가입해 주세요.","auth/email-already-in-use":"이미 가입된 이메일이에요. '로그인'을 눌러 주세요.",
   "auth/weak-password":"비밀번호는 6자 이상으로 정해 주세요.","auth/network-request-failed":"인터넷 연결을 확인해 주세요.","auth/too-many-requests":"시도가 너무 많아요. 잠시 뒤 다시 해 주세요.",
   "auth/operation-not-allowed":"Firebase에서 이메일/비밀번호 로그인이 꺼져 있어요. 설정에서 켜 주세요."};
-function renderSyncCard(){
+function renderSyncCard(){renderSpace();
   const box=$("#syncBody");if(!box)return;
   if(!fb){box.innerHTML=fbReason?`<div class="note" style="margin-top:0">${esc(fbReason)}</div>`:`<div class="fine" style="margin:0">아직 동기화 설정 전이에요. 지금은 기록이 이 기기에만 저장되니, 다른 기기로 옮길 때는 아래 백업 파일을 '합치기'로 불러오세요.</div>`;return}
   if(SYNC.uid){box.innerHTML=`<div class="kv"><span>계정</span><b>${esc(SYNC.email)}</b></div><div class="kv"><span>상태</span><b id="syncState">${esc($("#status").textContent)}</b></div>
     <div class="fine">PC와 폰에서 같은 계정으로 로그인하면 두통 기록, 약 목록, 마루 기록과 사진이 자동으로 맞춰져요.</div>
-    <div class="actions" style="margin-top:12px"><button type="button" class="btn ghost small" id="syncNow">지금 동기화</button><button type="button" class="btn ghost small" id="syncOut">로그아웃</button></div>`;
+    <div class="actions" style="margin-top:12px"><button type="button" class="btn ghost small" id="syncNow">지금 동기화</button><button type="button" class="btn ghost small" id="pwOpen" aria-expanded="false">비밀번호 바꾸기</button><button type="button" class="btn ghost small" id="emOpen" aria-expanded="false">이메일 바꾸기</button><button type="button" class="btn ghost small" id="syncOut">로그아웃</button></div>`;
+    $("#pwOpen").onclick=()=>{const f=$("#pwForm");if(f){f.remove();$("#pwOpen").setAttribute("aria-expanded","false");return}
+      $("#pwOpen").setAttribute("aria-expanded","true");
+      $("#pwOpen").closest(".actions").insertAdjacentHTML("afterend",`<form id="pwForm" style="gap:8px;margin-top:12px" autocomplete="on">
+        <input type="email" value="${esc(SYNC.email)}" autocomplete="username" hidden readonly>
+        <input type="password" id="pwCur" placeholder="지금 비밀번호" autocomplete="current-password" required>
+        <input type="password" id="pwNew" placeholder="새 비밀번호 (6자 이상)" autocomplete="new-password" required minlength="6">
+        <input type="password" id="pwNew2" placeholder="새 비밀번호 한 번 더" autocomplete="new-password" required minlength="6">
+        <div class="actions"><button type="submit" class="btn" id="pwSave">비밀번호 바꾸기</button><button type="button" class="btn ghost" id="pwCancel">취소</button></div>
+        <div class="msg" id="pwMsg" style="color:var(--danger)"></div>
+        <div class="fine" style="margin-top:0">지금 비밀번호가 기억나지 않으면 로그아웃한 뒤 '비밀번호 찾기'로 재설정 메일을 받으세요.</div></form>`);
+      $("#pwCancel").onclick=()=>$("#pwOpen").click();
+      $("#pwForm").onsubmit=async ev=>{ev.preventDefault();const cur=$("#pwCur").value,n1=$("#pwNew").value,n2=$("#pwNew2").value,msg=$("#pwMsg");msg.style.color="var(--danger)";msg.textContent="";
+        if(n1.length<6){msg.textContent="새 비밀번호는 6자 이상으로 정해 주세요.";return}
+        if(n1!==n2){msg.textContent="새 비밀번호 두 칸이 서로 달라요.";return}
+        if(n1===cur){msg.textContent="지금 비밀번호와 다른 비밀번호로 정해 주세요.";return}
+        const btn=$("#pwSave");btn.disabled=true;
+        try{const u=fb.auth.currentUser;const cred=firebase.auth.EmailAuthProvider.credential(u.email,cur);await u.reauthenticateWithCredential(cred);await u.updatePassword(n1);
+          $("#pwForm").remove();$("#pwOpen").setAttribute("aria-expanded","false");toast("비밀번호를 바꿨어요. 다른 기기는 로그아웃될 수 있으니 새 비밀번호로 다시 로그인하세요")}
+        catch(e){msg.textContent=e&&(e.code==="auth/wrong-password"||e.code==="auth/invalid-credential")?"지금 비밀번호가 맞지 않아요.":AUTH_MSG[e&&e.code]||"바꾸지 못했어요. 잠시 뒤 다시 해 주세요."}
+        finally{btn.disabled=false}};
+      $("#pwCur").focus()};
+    $("#emOpen").onclick=()=>{const f=$("#emForm");if(f){f.remove();$("#emOpen").setAttribute("aria-expanded","false");return}
+      $("#emOpen").setAttribute("aria-expanded","true");
+      $("#emOpen").closest(".actions").insertAdjacentHTML("afterend",`<form id="emForm" style="gap:8px;margin-top:12px" autocomplete="on">
+        <input type="email" id="emNew" placeholder="새 이메일" autocomplete="email" required>
+        <input type="password" id="emPw" placeholder="지금 비밀번호" autocomplete="current-password" required>
+        <div class="actions"><button type="submit" class="btn" id="emSave">확인 메일 보내기</button><button type="button" class="btn ghost" id="emCancel">취소</button></div>
+        <div class="msg" id="emMsg" style="color:var(--danger)"></div>
+        <div class="fine" style="margin-top:0">새 이메일로 온 확인 링크를 누르면 바뀌어요. 바뀐 뒤에는 모든 기기에서 새 이메일로 다시 로그인하세요. 기록은 그대로예요.</div></form>`);
+      $("#emCancel").onclick=()=>$("#emOpen").click();
+      $("#emForm").onsubmit=async ev=>{ev.preventDefault();const ne=$("#emNew").value.trim(),pw=$("#emPw").value,msg=$("#emMsg");msg.style.color="var(--danger)";msg.textContent="";
+        if(!/^\S+@\S+\.\S+$/.test(ne)){msg.textContent="이메일 형식을 확인해 주세요.";return}
+        if(ne.toLowerCase()===(SYNC.email||"").toLowerCase()){msg.textContent="지금 쓰는 이메일과 같아요.";return}
+        const btn=$("#emSave");btn.disabled=true;
+        try{const u=fb.auth.currentUser;await u.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(u.email,pw));await u.verifyBeforeUpdateEmail(ne);
+          msg.style.color="var(--good)";msg.textContent=`${ne}로 확인 메일을 보냈어요. 메일의 링크를 누르면 바뀌어요.`}
+        catch(e){msg.textContent=e&&(e.code==="auth/wrong-password"||e.code==="auth/invalid-credential")?"지금 비밀번호가 맞지 않아요.":e&&e.code==="auth/email-already-in-use"?"이미 다른 계정이 쓰는 이메일이에요.":AUTH_MSG[e&&e.code]||"보내지 못했어요. 잠시 뒤 다시 해 주세요."}
+        finally{btn.disabled=false}};
+      $("#emNew").focus()};
     $("#syncNow").onclick=()=>{stopSync(true);fb.auth.currentUser&&startSync(fb.auth.currentUser)};
     $("#syncOut").onclick=()=>{const a=$("#syncOut").parentElement;a.innerHTML=`<div class="confirm" style="justify-content:flex-start">로그아웃해도 이 기기의 기록은 남아요.<button type="button" class="btn small" id="syncOutY">로그아웃</button><button type="button" class="btn ghost small" id="syncOutN">취소</button></div>`;
       $("#syncOutN").onclick=renderSyncCard;$("#syncOutY").onclick=()=>fb.auth.signOut()};
@@ -2309,6 +2436,16 @@ function initSync(){
   renderSyncCard();
 }
 
+
+/* ---------- 새 버전 확인 ---------- */
+let updLast=0,updVer="";
+async function checkUpdate(){if(location.protocol==="file:"&&!window.__testUpd)return;if(Date.now()-updLast<20*60000)return;updLast=Date.now();
+  try{const r=await fetch(location.pathname+"?check="+Date.now(),{cache:"no-store"});if(!r.ok)return;const t=await r.text();const m=t.match(/APP_VERSION\s*=\s*"([^"]+)"/);
+    if(m&&m[1]!==APP_VERSION){updVer=m[1];$("#updBar").hidden=false}}catch{}}
+$("#updGo").onclick=()=>{location.href=location.pathname+"?v="+encodeURIComponent(updVer||Date.now())+location.hash};
+$("#updX").onclick=()=>{$("#updBar").hidden=true};
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkUpdate()});
+setTimeout(checkUpdate,3000);
 
 /* ---------- 탭 ---------- */
 const TABS=["headache","maru","summary"];
