@@ -456,7 +456,8 @@ footer{font-size:12px;color:var(--muted);padding:4px}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
-const firebaseConfig = {
+/* ▼ Firebase 설정: 콘솔에서 복사한 firebaseConfig 값을 null 대신 붙여 넣으세요. null이면 동기화 없이 이 기기에만 저장합니다. */
+const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAdpDPCS0AqXbDzkpWAdPj5Pb8rj7kJTu0",
   authDomain: "juhee-note.firebaseapp.com",
   projectId: "juhee-note",
@@ -464,6 +465,7 @@ const firebaseConfig = {
   messagingSenderId: "700774189915",
   appId: "1:700774189915:web:6eb76ad17e00b37af5687e"
 };
+/* ▲ 여기까지 */
 (function(){
 const OPTS={
   sites:["앞이마","왼쪽 관자놀이","오른쪽 관자놀이","눈 뒤","안구 통증","정수리","뒤통수","목·어깨","머리 전체"],
@@ -1052,7 +1054,7 @@ function mergeBackup(d){
 /* ---------- PC·폰 동기화 (Firebase) ---------- */
 const COLS=["h","v","w","m"];
 const SYNC={on:false,uid:null,email:"",known:{},unsubs:[],pushing:false,again:false,state:"off"};
-let fb=null;
+let fb=null,fbReason="";
 const sig=o=>JSON.stringify(o,(k,v)=>v&&typeof v==="object"&&!Array.isArray(v)?Object.keys(v).sort().reduce((a,x)=>(a[x]=v[x],a),{}):v);
 const clean=o=>JSON.parse(JSON.stringify(o));
 function readH(){try{return JSON.parse(localStorage.getItem(HK)||"{}")}catch{return{}}}
@@ -1145,7 +1147,7 @@ const AUTH_MSG={"auth/invalid-email":"이메일 형식을 확인해 주세요.",
   "auth/operation-not-allowed":"Firebase에서 이메일/비밀번호 로그인이 꺼져 있어요. 설정에서 켜 주세요."};
 function renderSyncCard(){
   const box=$("#syncBody");if(!box)return;
-  if(!fb){box.innerHTML=`<div class="fine" style="margin:0">아직 동기화 설정 전이에요. 지금은 기록이 이 기기에만 저장되니, 다른 기기로 옮길 때는 아래 백업 파일을 '합치기'로 불러오세요.</div>`;return}
+  if(!fb){box.innerHTML=fbReason?`<div class="note" style="margin-top:0">${esc(fbReason)}</div>`:`<div class="fine" style="margin:0">아직 동기화 설정 전이에요. 지금은 기록이 이 기기에만 저장되니, 다른 기기로 옮길 때는 아래 백업 파일을 '합치기'로 불러오세요.</div>`;return}
   if(SYNC.uid){box.innerHTML=`<div class="kv"><span>계정</span><b>${esc(SYNC.email)}</b></div><div class="kv"><span>상태</span><b id="syncState">${esc($("#status").textContent)}</b></div>
     <div class="fine">PC와 폰에서 같은 계정으로 로그인하면 두통 기록, 약 목록, 마루 기록과 사진이 자동으로 맞춰져요.</div>
     <div class="actions" style="margin-top:12px"><button type="button" class="btn ghost small" id="syncNow">지금 동기화</button><button type="button" class="btn ghost small" id="syncOut">로그아웃</button></div>`;
@@ -1170,8 +1172,10 @@ function renderSyncCard(){
     try{await fb.auth.sendPasswordResetEmail(em);$("#authMsg").style.color="var(--good)";$("#authMsg").textContent="비밀번호 재설정 메일을 보냈어요."}catch(e){$("#authMsg").textContent=AUTH_MSG[e.code]||"메일을 보내지 못했어요."}};
 }
 function initSync(){
-  try{if(FIREBASE_CONFIG&&window.firebase){firebase.initializeApp(FIREBASE_CONFIG);fb={auth:firebase.auth(),db:firebase.firestore()};
-    fb.auth.onAuthStateChanged(u=>{if(u){if(SYNC.uid!==u.uid){stopSync(true);startSync(u)}}else stopSync(false)})}}catch{fb=null}
+  let cfg=null;try{cfg=FIREBASE_CONFIG}catch{}
+  if(cfg&&!window.firebase)fbReason="동기화 프로그램을 불러오지 못했어요. 인터넷 연결을 확인하고 앱을 다시 열어 주세요.";
+  try{if(cfg&&window.firebase){firebase.initializeApp(cfg);fb={auth:firebase.auth(),db:firebase.firestore()};
+    fb.auth.onAuthStateChanged(u=>{if(u){if(SYNC.uid!==u.uid){stopSync(true);startSync(u)}}else stopSync(false)})}}catch(e){fb=null;fbReason="동기화 설정에 문제가 있어요: "+(e&&e.message||e)}
   renderSyncCard();
 }
 
