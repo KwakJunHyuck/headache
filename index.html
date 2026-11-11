@@ -978,7 +978,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 /* ▼ Firebase 설정: 콘솔에서 복사한 firebaseConfig 값을 null 대신 붙여 넣으세요. null이면 동기화 없이 이 기기에만 저장합니다. */
-const APP_VERSION = "2026.11.11-4";
+const APP_VERSION = "2026.11.11-5";
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAdpDPCS0AqXbDzkpWAdPj5Pb8rj7kJTu0",
   authDomain: "juhee-note.firebaseapp.com",
@@ -2260,7 +2260,7 @@ const spaceKey=()=>"maru-space-"+SYNC.uid;
 const metaKey=()=>"sync2-"+SYNC.uid;
 function loadMeta(){let o=null;try{o=JSON.parse(localStorage.getItem(metaKey())||"null")}catch{}
   o=o||{known:{},cursor:{}};COLS.forEach(c=>{o.known[c]=o.known[c]||{};o.cursor[c]=o.cursor[c]||0});return o}
-function saveMeta(){try{localStorage.setItem(metaKey(),JSON.stringify({known:SYNC.known,cursor:SYNC.cursor}))}catch{}}
+function saveMeta(){try{localStorage.setItem(metaKey(),JSON.stringify({known:SYNC.known,cursor:SYNC.cursor,fullAt:SYNC.fullAt||0}))}catch{}}
 const tsMs=t=>t&&typeof t.toMillis==="function"?t.toMillis():0;
 function bump(c,t){const ms=tsMs(t);if(ms>SYNC.cursor[c])SYNC.cursor[c]=ms}
 function setSync(state,text){SYNC.state=state;const st=$("#status");
@@ -2315,7 +2315,8 @@ async function startSync(user){
   const TS=firebase.firestore.Timestamp;
   try{
     const remote={},full={};
-    for(const c of COLS){remote[c]={};full[c]=!SYNC.cursor[c];
+    SYNC.fullAt=meta.fullAt||0;const dailyFull=Date.now()-SYNC.fullAt>20*3600000;
+    for(const c of COLS){remote[c]={};full[c]=dailyFull||!SYNC.cursor[c];
       const q=full[c]?colRef(c):colRef(c).where("_t",">",TS.fromMillis(Math.max(0,SYNC.cursor[c]-60000)));
       const qs=await q.get();qs.forEach(d=>{const x=d.data();remote[c][d.id]=x;bump(c,x._t)})}
     const cur=localState();const h=cur.h;let changed=false;
@@ -2323,6 +2324,7 @@ async function startSync(user){
     // 예전 방식으로 올라간 문서(_t 없음)는 한 번 다시 올려 서버 시각을 붙인다
     COLS.forEach(c=>{if(full[c])Object.entries(remote[c]).forEach(([id,rd])=>{if(!rd._t&&!rd._del)delete SYNC.known[c][id]})});
     try{localStorage.removeItem("sync-known-"+SYNC.uid)}catch{}
+    if(dailyFull)SYNC.fullAt=Date.now();
     saveMeta();if(changed)persistAndRender(h);
     if(SYNC.spaceNext!==null&&SYNC.spaceNext!==SYNC.space){const n=SYNC.spaceNext;SYNC.spaceNext=null;return switchSpace(n,true)}
     SYNC.ready=true;await pushDiff();
@@ -2346,7 +2348,7 @@ async function switchSpace(id,fromRemote){
   const u=fb&&fb.auth.currentUser;stopSync(true);renderSpace();if(u)await startSync(u);
   if(fromRemote)toast(id?"마루 공유 공간에 연결했어요":"마루 기록을 내 계정으로 돌렸어요");
 }
-function stopSync(keepUser){SYNC.unsubs.forEach(u=>{try{u()}catch{}});SYNC.unsubs=[];SYNC.on=false;SYNC.ready=false;if(!keepUser){SYNC.uid=null;SYNC.email=""}setSync("off");renderSyncCard()}
+function stopSync(keepUser){SYNC.unsubs.forEach(u=>{try{u()}catch{}});SYNC.unsubs=[];SYNC.on=false;SYNC.ready=false;if(!keepUser){if(SYNC.uid){try{localStorage.removeItem("sync2-"+SYNC.uid)}catch{}}SYNC.uid=null;SYNC.email=""}setSync("off");renderSyncCard()}
 
 /* 사진: Firestore 'p' 컬렉션에 작게 줄인 JPEG을 data URL로 저장 */
 const PSK="sync-photos";
@@ -2421,9 +2423,9 @@ const AUTH_MSG={"auth/invalid-email":"이메일 형식을 확인해 주세요.",
 function renderSyncCard(){renderSpace();
   const box=$("#syncBody");if(!box)return;
   if(!fb){box.innerHTML=fbReason?`<div class="note" style="margin-top:0">${esc(fbReason)}</div>`:`<div class="fine" style="margin:0">아직 동기화 설정 전이에요. 지금은 기록이 이 기기에만 저장되니, 다른 기기로 옮길 때는 아래 백업 파일을 '합치기'로 불러오세요.</div>`;return}
-  if(SYNC.uid){box.innerHTML=`<div class="kv"><span>계정</span><b>${esc(SYNC.email)}</b></div><div class="kv"><span>상태</span><b id="syncState">${esc($("#status").textContent)}</b></div>
+  if(SYNC.uid){box.innerHTML=`<div class="kv"><span>계정</span><b>${esc(SYNC.email)}</b></div><div class="kv"><span>상태</span><b id="syncState">${esc($("#status").textContent)}</b></div><div class="kv"><span>앱 버전</span><b>${APP_VERSION}</b></div><div class="kv"><span>마지막 전체 맞추기</span><b>${SYNC.fullAt?new Date(SYNC.fullAt).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}):"-"}</b></div>
     <div class="fine">PC와 폰에서 같은 계정으로 로그인하면 두통 기록, 약 목록, 마루 기록과 사진이 자동으로 맞춰져요.</div>
-    <div class="actions" style="margin-top:12px"><button type="button" class="btn ghost small" id="syncNow">지금 동기화</button><button type="button" class="btn ghost small" id="pwOpen" aria-expanded="false">비밀번호 바꾸기</button><button type="button" class="btn ghost small" id="emOpen" aria-expanded="false">이메일 바꾸기</button><button type="button" class="btn ghost small" id="syncOut">로그아웃</button></div>`;
+    <div class="actions" style="margin-top:12px"><button type="button" class="btn ghost small" id="syncNow">지금 동기화</button><button type="button" class="btn ghost small" id="syncFull">전체 다시 맞추기</button><button type="button" class="btn ghost small" id="pwOpen" aria-expanded="false">비밀번호 바꾸기</button><button type="button" class="btn ghost small" id="emOpen" aria-expanded="false">이메일 바꾸기</button><button type="button" class="btn ghost small" id="syncOut">로그아웃</button></div>`;
     $("#pwOpen").onclick=()=>{const f=$("#pwForm");if(f){f.remove();$("#pwOpen").setAttribute("aria-expanded","false");return}
       $("#pwOpen").setAttribute("aria-expanded","true");
       $("#pwOpen").closest(".actions").insertAdjacentHTML("afterend",`<form id="pwForm" style="gap:8px;margin-top:12px" autocomplete="on">
@@ -2463,6 +2465,7 @@ function renderSyncCard(){renderSpace();
         catch(e){msg.textContent=e&&(e.code==="auth/wrong-password"||e.code==="auth/invalid-credential")?"지금 비밀번호가 맞지 않아요.":e&&e.code==="auth/email-already-in-use"?"이미 다른 계정이 쓰는 이메일이에요.":AUTH_MSG[e&&e.code]||"보내지 못했어요. 잠시 뒤 다시 해 주세요."}
         finally{btn.disabled=false}};
       $("#emNew").focus()};
+    $("#syncFull").onclick=()=>{try{localStorage.removeItem("sync2-"+SYNC.uid)}catch{}stopSync(true);fb.auth.currentUser&&startSync(fb.auth.currentUser).then(()=>{toast("서버와 전체를 다시 맞췄어요");renderSyncCard()})};
     $("#syncNow").onclick=()=>{stopSync(true);fb.auth.currentUser&&startSync(fb.auth.currentUser)};
     $("#syncOut").onclick=()=>{const a=$("#syncOut").parentElement;a.innerHTML=`<div class="confirm" style="justify-content:flex-start">로그아웃해도 이 기기의 기록은 남아요.<button type="button" class="btn small" id="syncOutY">로그아웃</button><button type="button" class="btn ghost small" id="syncOutN">취소</button></div>`;
       $("#syncOutN").onclick=renderSyncCard;$("#syncOutY").onclick=()=>fb.auth.signOut()};
