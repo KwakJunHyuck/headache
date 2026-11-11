@@ -51,7 +51,7 @@ form{display:flex;flex-direction:column;gap:20px}
 .row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 label.f{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted);min-width:0}
-input[type=date],input[type=time],input[type=number],input[type=text],input[type=tel],textarea,select{
+input[type=date],input[type=time],input[type=number],input[type=text],input[type=tel],input[type=email],input[type=password],textarea,select{
   font:inherit;font-size:16px;color:var(--ink);background:var(--soft);border:1.5px solid transparent;border-radius:12px;padding:10px 12px;width:100%;min-width:0;
   -webkit-appearance:none;appearance:none;min-height:46px}
 input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);background:var(--card)}
@@ -1082,6 +1082,12 @@ async function pushDiff(){
   catch(e){setSync("err","올리지 못한 기록이 있어요. 인터넷이 연결되면 다시 올려요.");setTimeout(schedulePush,15000)}
   finally{SYNC.pushing=false;if(SYNC.again){SYNC.again=false;schedulePush()}}
 }
+/* 처음 동기화할 때 프로필·일정·약 목록은 한쪽으로 덮지 않고 합침 */
+function mergeMeta(id,l,r){
+  if(id==="profile"){const o={...r};Object.entries(l).forEach(([k,v])=>{if(v!==""&&v!==false&&v!=null&&(o[k]===undefined||o[k]===""||o[k]===false||o[k]===null))o[k]=v});return o}
+  if(id==="schedule"){const list=clean(r.list||[]);(l.list||[]).forEach(s=>{const m=list.find(x=>x.id===s.id||x.name===s.name);if(!m)list.push(s);else if(s.last&&(!m.last||s.last>m.last))m.last=s.last});return{list}}
+  if(id==="meds"){const list=clean(r.list||[]);(l.list||[]).forEach(x=>{if(!list.some(y=>y.name===x.name))list.push(x)});return{list}}
+  return r}
 /* 원격 값 하나를 이 기기에 반영. val=null 이면 삭제 */
 function applyOne(c,id,val,h){
   if(c==="h"){if(val===null)delete h[id];else h[id]=val}
@@ -1102,7 +1108,8 @@ async function startSync(user){
       Object.entries(remote[c]).forEach(([id,r])=>{const rs=sig(r),l=st[c][id];
         if(l===undefined){if(kn[id]===undefined){applyOne(c,id,r,h);changed=true}}            // 처음 보는 원격 기록 → 받기 (이 기기에서 지운 건 그대로 둠)
         else{const ls=sig(l);
-          if(ls!==rs){const remoteWins=kn[id]===rs?false:kn[id]===ls?true:((r.updatedAt||"")>=(l.updatedAt||""));
+          if(ls!==rs&&c==="m"&&kn[id]===undefined){applyOne(c,id,mergeMeta(id,l,r),h);changed=true}
+          else if(ls!==rs){const remoteWins=kn[id]===rs?false:kn[id]===ls?true:((r.updatedAt||"")>=(l.updatedAt||""));
             if(remoteWins){applyOne(c,id,r,h);changed=true}}}
         kn[id]=rs});
       Object.keys(st[c]).forEach(id=>{if(!(id in remote[c])&&kn[id]!==undefined){applyOne(c,id,null,h);delete kn[id];changed=true}}); // 다른 기기에서 지운 기록
