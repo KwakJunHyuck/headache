@@ -40,7 +40,10 @@ img{max-width:100%}
 .page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:8px 4px 4px}
 .page-head h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin:0}
 .page-head .sub{font-size:13px;color:var(--muted)}
-.status{font-size:12px;color:var(--muted)}
+.status{font-size:12px;color:var(--muted);white-space:nowrap}
+.status.ok{color:var(--good)}
+.status.err{color:var(--warn)}
+#authForm input{width:100%}
 .panel{background:var(--card);border-radius:22px;padding:20px}
 h2{font-size:19px;font-weight:700;letter-spacing:-.02em;margin:0 0 14px;text-wrap:balance}
 h3{font-size:13px;font-weight:600;color:var(--muted);margin:0 0 8px}
@@ -416,9 +419,14 @@ footer{font-size:12px;color:var(--muted);padding:4px}
     <div id="msumBody"></div>
   </section>
 
+  <section class="panel" aria-labelledby="syncTitle">
+    <h2 id="syncTitle">PC·폰 동기화</h2>
+    <div id="syncBody"></div>
+  </section>
+
   <section class="panel" aria-labelledby="bkTitle">
     <h2 id="bkTitle">백업</h2>
-    <div class="fine" style="margin:-6px 0 14px">기록은 이 아이폰에만 저장돼요. 한 달에 한 번쯤 백업 파일을 저장해 두면, 폰을 바꿔도 불러올 수 있어요. 사진은 백업 파일에 들어가지 않아요.</div>
+    <div class="fine" style="margin:-6px 0 14px">동기화를 쓰지 않을 때는 기록이 이 기기에만 저장돼요. 다른 기기로 옮기려면 여기서 백업 파일을 저장하고, 그 기기에서 '합치기'로 불러오세요. 사진은 백업 파일에 들어가지 않아요.</div>
     <div class="actions">
       <button class="btn" id="bkSave" type="button">전체 백업 파일 저장</button>
       <button class="btn ghost" id="bkLoad" type="button">백업 불러오기</button>
@@ -444,7 +452,18 @@ footer{font-size:12px;color:var(--muted);padding:4px}
 <div class="viewer" id="viewer" hidden><img id="viewerImg" alt=""><button class="btn small close" type="button" id="viewerClose">닫기</button></div>
 <datalist id="doseList"><option value="1정"><option value="0.5정"><option value="2정"></datalist>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAdpDPCS0AqXbDzkpWAdPj5Pb8rj7kJTu0",
+  authDomain: "juhee-note.firebaseapp.com",
+  projectId: "juhee-note",
+  storageBucket: "juhee-note.firebasestorage.app",
+  messagingSenderId: "700774189915",
+  appId: "1:700774189915:web:6eb76ad17e00b37af5687e"
+};
 (function(){
 const OPTS={
   sites:["앞이마","왼쪽 관자놀이","오른쪽 관자놀이","눈 뒤","안구 통증","정수리","뒤통수","목·어깨","머리 전체"],
@@ -492,7 +511,7 @@ const DEFAULT_MEDS=[
 ];
 const MK="headache-meds-v1";
 let medLib=(()=>{try{const v=JSON.parse(localStorage.getItem(MK));if(Array.isArray(v))return v}catch{}return DEFAULT_MEDS.map(m=>({...m}))})();
-function saveLib(){try{localStorage.setItem(MK,JSON.stringify(medLib))}catch{}}
+function saveLib(){try{localStorage.setItem(MK,JSON.stringify(medLib))}catch{}schedulePush()}
 const libByName=n=>medLib.find(m=>m.name===n);
 function renderPick(){
   const p=$("#pick");
@@ -734,7 +753,7 @@ $("#sumCopy").onclick=()=>copyText(summaryText(),$("#sumCopy"),"요약 복사");
 /* ---------- storage ---------- */
 function localStore(){
   const K="headache-log-v1";const read=()=>{try{return JSON.parse(localStorage.getItem(K)||"{}")}catch{return{}}};
-  const write=o=>{try{localStorage.setItem(K,JSON.stringify(o))}catch{}};
+  const write=o=>{try{localStorage.setItem(K,JSON.stringify(o))}catch{}schedulePush()};
   return{start(cb){const o=read();cb(Object.entries(o).map(([id,d])=>({id,...d})))},
     async put(id,d){const o=read();o[id]=d;write(o);this.start(sync)},async del(id){const o=read();delete o[id];write(o);this.start(sync)}};
 }
@@ -761,7 +780,7 @@ const idb={p:null,open(){return this.p||(this.p=new Promise((res,rej)=>{const r=
   async tx(mode,fn){const d=await this.open();return new Promise((res,rej)=>{const t=d.transaction("p",mode);const r=fn(t.objectStore("p"));t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error)})},
   put(k,v){return this.tx("readwrite",s=>s.put(v,k))},get(k){return this.tx("readonly",s=>s.get(k))},del(k){return this.tx("readwrite",s=>s.delete(k))}};
 const urlCache={};
-async function photoURL(id){if(urlCache[id])return urlCache[id];try{const b=await idb.get(id);if(!b)return null;return urlCache[id]=URL.createObjectURL(b)}catch{return null}}
+async function photoURL(id){if(urlCache[id])return urlCache[id];try{let b=await idb.get(id);if(!b)b=await pullPhoto(id);if(!b)return null;return urlCache[id]=URL.createObjectURL(b)}catch{return null}}
 async function shrink(file,max=1600,q=.82){
   const url=URL.createObjectURL(file);
   try{const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url});
@@ -769,7 +788,7 @@ async function shrink(file,max=1600,q=.82){
     c.width=Math.round(img.naturalWidth*r);c.height=Math.round(img.naturalHeight*r);c.getContext("2d").drawImage(img,0,0,c.width,c.height);
     return await new Promise(res=>c.toBlob(b=>res(b||file),"image/jpeg",q))}
   catch{return file}finally{URL.revokeObjectURL(url)}}
-async function savePhoto(file,max){const b=await shrink(file,max);const id="ph"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);await idb.put(id,b);return id}
+async function savePhoto(file,max){const b=await shrink(file,max);const id="ph"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);await idb.put(id,b);pushPhoto(id,b);return id}
 function openViewer(u){$("#viewerImg").src=u;$("#viewer").hidden=false}
 $("#viewer").onclick=()=>{$("#viewer").hidden=true;$("#viewerImg").removeAttribute("src")};
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch{}
@@ -785,7 +804,7 @@ const AREAS=["피부","귀","눈","치아","관절·슬개골","소화기","호�
 function normMaru(v){v=v&&typeof v==="object"?v:{};return{profile:{name:"마루",breed:"말티즈",...(v.profile||{})},
   schedule:Array.isArray(v.schedule)?v.schedule:SCHED_DEFAULT.map(s=>({...s,last:"",on:true})),visits:v.visits||{},weights:v.weights||{}}}
 let maru=(()=>{try{return normMaru(JSON.parse(localStorage.getItem(MARU_K)))}catch{return normMaru({})}})();
-function saveMaru(){try{localStorage.setItem(MARU_K,JSON.stringify(maru));return true}catch{toast("저장 공간이 부족해 저장하지 못했어요");return false}}
+function saveMaru(){try{localStorage.setItem(MARU_K,JSON.stringify(maru));schedulePush();return true}catch{toast("저장 공간이 부족해 저장하지 못했어요");return false}}
 const weightsSorted=()=>Object.entries(maru.weights).map(([id,w])=>({id,...w})).filter(w=>w.date&&w.kg>0).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
 const latestWeight=()=>{const w=weightsSorted();return w[w.length-1]||null};
 const visitsSorted=()=>Object.entries(maru.visits).map(([id,v])=>({id,...v})).sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
@@ -815,7 +834,7 @@ async function renderHero(){
 }
 $("#m-photo").onclick=()=>$("#m-photo-in").click();
 $("#m-photo-in").onchange=async ev=>{const f=ev.target.files[0];ev.target.value="";if(!f)return;
-  try{const old=maru.profile.photoId;maru.profile.photoId=await savePhoto(f,800);saveMaru();if(old)idb.del(old).catch(()=>{});renderHero();toast("사진을 바꿨어요")}catch{toast("사진을 저장하지 못했어요")}};
+  try{const old=maru.profile.photoId;maru.profile.photoId=await savePhoto(f,800);saveMaru();if(old)delPhoto(old);renderHero();toast("사진을 바꿨어요")}catch{toast("사진을 저장하지 못했어요")}};
 let pNeut=false;
 function openProfile(open){const f=$("#m-prof");f.hidden=!open;$("#m-prof-btn").setAttribute("aria-expanded",String(open));$("#m-prof-btn").textContent=open?"프로필 닫기":"프로필 수정";
   if(open){const p=maru.profile;$("#p-name").value=p.name||"";$("#p-breed").value=p.breed||"";$("#p-birth").value=p.birth||"";$("#p-sex").value=p.sex||"";
@@ -937,7 +956,7 @@ $("#v-form").onsubmit=async ev=>{ev.preventDefault();
     if(v.weight)maru.weights["vw_"+id]={date,kg:v.weight,from:"visit"};else delete maru.weights["vw_"+id];
     const changed=[];v.preventive.forEach(n=>{const s=maru.schedule.find(x=>x.name===n);if(s&&(!s.last||date>=s.last)){s.last=date;changed.push(n)}});
     if(!saveMaru())return;
-    vRemoved.forEach(pid=>idb.del(pid).catch(()=>{}));
+    vRemoved.forEach(pid=>delPhoto(pid));
     const was=vEditing;closeVisit();renderMaru();
     toast((was?"수정했어요":"병원 기록을 저장했어요")+(changed.length?` · 일정 ${changed.length}개 갱신`:""));
     document.getElementById("vi-"+id)?.scrollIntoView({behavior:"smooth",block:"center"});
@@ -961,7 +980,7 @@ async function renderVisits(){
   box.querySelectorAll("[data-vdel]").forEach(b=>b.onclick=()=>{const ops=b.parentElement;const id=b.dataset.vdel;
     ops.innerHTML=`<div class="confirm">이 기록을 지울까요?<button type="button" class="btn danger small">삭제</button><button type="button" class="btn ghost small">취소</button></div>`;
     const [yes,no]=ops.querySelectorAll("button");no.onclick=renderVisits;
-    yes.onclick=()=>{const v=maru.visits[id];delete maru.visits[id];delete maru.weights["vw_"+id];if(saveMaru()){(v?.photoIds||[]).forEach(p=>idb.del(p).catch(()=>{}));if(vEditing===id)closeVisit();renderMaru();toast("삭제했어요")}}});
+    yes.onclick=()=>{const v=maru.visits[id];delete maru.visits[id];delete maru.weights["vw_"+id];if(saveMaru()){(v?.photoIds||[]).forEach(p=>delPhoto(p));if(vEditing===id)closeVisit();renderMaru();toast("삭제했어요")}}});
   for(const el of box.querySelectorAll("[data-ph]")){const v=maru.visits[el.dataset.ph];if(!v)continue;
     for(const pid of v.photoIds||[]){const u=await photoURL(pid);if(!u)continue;const t=document.createElement("button");t.type="button";t.className="thumb";t.setAttribute("aria-label","사진 크게 보기");
       t.innerHTML=`<img src="${u}" alt="">`;t.onclick=()=>openViewer(u);el.appendChild(t)}}
@@ -1002,15 +1021,159 @@ $("#bkLoad").onclick=()=>$("#bkIn").click();
 $("#bkIn").onchange=async ev=>{const f=ev.target.files[0];ev.target.value="";if(!f)return;let d;
   try{d=JSON.parse(await f.text());if(d.app!=="juhee-note")throw 0}catch{$("#bkConfirm").innerHTML='<div class="note">이 앱의 백업 파일이 아니에요. "주희노트_백업"으로 시작하는 파일을 골라 주세요.</div>';return}
   const hn=Object.keys(d.headache||{}).length,vn=Object.keys(d.maru?.visits||{}).length;
-  $("#bkConfirm").innerHTML=`<div class="note">${kDot((d.savedAt||"").slice(0,10))} 백업 · 두통 ${hn}건, 병원 ${vn}건. 지금 이 폰의 기록을 이 백업으로 바꿀까요?<div class="actions" style="margin-top:10px"><button type="button" class="btn small" id="bkYes">불러오기</button><button type="button" class="btn ghost small" id="bkNo">취소</button></div></div>`;
+  $("#bkConfirm").innerHTML=`<div class="note">${kDot((d.savedAt||"").slice(0,10))} 백업 · 두통 ${hn}건, 병원 ${vn}건. 어떻게 불러올까요?<div class="fine" style="color:inherit;margin-top:6px"><b>합치기</b>: 이 기기 기록은 그대로 두고 백업에만 있는 기록을 더해요. 같은 기록은 나중에 고친 쪽을 남겨요.<br><b>바꾸기</b>: 이 기기 기록을 지우고 백업 내용으로 바꿔요.</div><div class="actions" style="margin-top:10px"><button type="button" class="btn small" id="bkMerge">합치기</button><button type="button" class="btn ghost small" id="bkYes">바꾸기</button><button type="button" class="btn ghost small" id="bkNo">취소</button></div></div>`;
+  $("#bkMerge").onclick=()=>{try{const r=mergeBackup(d);schedulePush();$("#bkConfirm").innerHTML="";store.start(sync);renderPick();renderMaru();toast(`합쳤어요 · 두통 ${r.addH}건, 병원 ${r.addV}건 추가`)}catch{toast("불러오지 못했어요")}};
   $("#bkNo").onclick=()=>$("#bkConfirm").innerHTML="";
   $("#bkYes").onclick=()=>{try{const photo=maru.profile.photoId;localStorage.setItem(HK,JSON.stringify(d.headache||{}));if(Array.isArray(d.meds))localStorage.setItem(MK,JSON.stringify(d.meds));
-    const m=normMaru(d.maru);if(photo)m.profile.photoId=photo;localStorage.setItem(MARU_K,JSON.stringify(m));location.reload()}catch{toast("불러오지 못했어요")}}};
+    const m=normMaru(d.maru);if(photo)m.profile.photoId=photo;localStorage.setItem(MARU_K,JSON.stringify(m));if(SYNC.on){maru=m;try{medLib=JSON.parse(localStorage.getItem(MK))||medLib}catch{}pushDiff().finally(()=>location.reload())}else location.reload()}catch{toast("불러오지 못했어요")}}};
 $("#csvBtn").onclick=()=>downloadFile("두통일지_"+ymd(new Date())+".csv",csv(),"text/csv");
 $("#mcsvBtn").onclick=()=>{const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
   const rows=[["날짜","병원","방문 이유","진료 부분","예방","진단","처방","진료비","몸무게","다음 방문","메모"]];
   visitsSorted().reverse().forEach(v=>rows.push([v.date,v.hospital,(v.reasons||[]).join("/"),(v.areas||[]).join("/"),(v.preventive||[]).join("/"),v.diagnosis,v.meds,v.cost||"",v.weight||"",v.nextDate,v.memo]));
   downloadFile(`${maru.profile.name||"마루"}_병원기록_${ymd(new Date())}.csv`,"﻿"+rows.map(r=>r.map(q).join(",")).join("\r\n"),"text/csv")};
+
+/* ---------- 백업 합치기 ---------- */
+function newerOf(a,b){return (b.updatedAt||"")>(a.updatedAt||"")?b:a}
+function mergeBackup(d){
+  let h={};try{h=JSON.parse(localStorage.getItem(HK)||"{}")}catch{}
+  let addH=0,addV=0;
+  Object.entries(d.headache||{}).forEach(([id,e])=>{if(!h[id]){h[id]=e;addH++}else h[id]=newerOf(h[id],e)});
+  const m=normMaru(d.maru);
+  Object.entries(m.visits).forEach(([id,v])=>{if(!maru.visits[id]){maru.visits[id]=v;addV++}else maru.visits[id]=newerOf(maru.visits[id],v)});
+  Object.entries(m.weights).forEach(([id,w])=>{if(!maru.weights[id])maru.weights[id]=w});
+  m.schedule.forEach(s=>{const mine=maru.schedule.find(x=>x.id===s.id||x.name===s.name);
+    if(!mine)maru.schedule.push(s);else if(s.last&&(!mine.last||s.last>mine.last))mine.last=s.last});
+  Object.entries(m.profile).forEach(([k,v])=>{if(k!=="photoId"&&v&&(maru.profile[k]===undefined||maru.profile[k]===""||maru.profile[k]===false))maru.profile[k]=v});
+  (Array.isArray(d.meds)?d.meds:[]).forEach(x=>{if(!medLib.some(y=>y.name===x.name))medLib.push(x)});
+  localStorage.setItem(HK,JSON.stringify(h));localStorage.setItem(MARU_K,JSON.stringify(maru));localStorage.setItem(MK,JSON.stringify(medLib));
+  return{addH,addV};
+}
+
+/* ---------- PC·폰 동기화 (Firebase) ---------- */
+const COLS=["h","v","w","m"];
+const SYNC={on:false,uid:null,email:"",known:{},unsubs:[],pushing:false,again:false,state:"off"};
+let fb=null;
+const sig=o=>JSON.stringify(o,(k,v)=>v&&typeof v==="object"&&!Array.isArray(v)?Object.keys(v).sort().reduce((a,x)=>(a[x]=v[x],a),{}):v);
+const clean=o=>JSON.parse(JSON.stringify(o));
+function readH(){try{return JSON.parse(localStorage.getItem(HK)||"{}")}catch{return{}}}
+function localState(){return{h:readH(),v:{...maru.visits},w:{...maru.weights},
+  m:{profile:clean(maru.profile),schedule:{list:clean(maru.schedule)},meds:{list:clean(medLib)}}}}
+const colRef=c=>fb.db.collection("users").doc(SYNC.uid).collection(c);
+const knownKey=()=>"sync-known-"+SYNC.uid;
+function loadKnown(){try{const k=JSON.parse(localStorage.getItem(knownKey())||"{}");COLS.forEach(c=>k[c]=k[c]||{});return k}catch{return{h:{},v:{},w:{},m:{}}}}
+function saveKnown(){try{localStorage.setItem(knownKey(),JSON.stringify(SYNC.known))}catch{}}
+function setSync(state,text){SYNC.state=state;const st=$("#status");
+  st.textContent={off:"이 기기에 저장됨",busy:"동기화 중…",ok:"동기화됨",err:"동기화 대기 중"}[state]||"";
+  st.className="status"+(state==="ok"?" ok":state==="err"?" err":"");
+  const s=$("#syncState");if(s)s.textContent=text||st.textContent;}
+let pushT;function schedulePush(){if(!SYNC.on)return;clearTimeout(pushT);pushT=setTimeout(pushDiff,500)}
+async function commitOps(ops){for(let i=0;i<ops.length;i+=400){const b=fb.db.batch();ops.slice(i,i+400).forEach(o=>o.val===null?b.delete(o.ref):b.set(o.ref,o.val));await b.commit()}}
+async function pushDiff(){
+  if(!SYNC.on)return;if(SYNC.pushing){SYNC.again=true;return}
+  const st=localState();const ops=[];
+  COLS.forEach(c=>{const kn=SYNC.known[c];
+    Object.entries(st[c]).forEach(([id,val])=>{const s=sig(val);if(kn[id]!==s)ops.push({c,id,s,ref:colRef(c).doc(id),val:clean(val)})});
+    Object.keys(kn).forEach(id=>{if(!(id in st[c]))ops.push({c,id,s:null,ref:colRef(c).doc(id),val:null})})});
+  if(!ops.length)return;
+  SYNC.pushing=true;setSync("busy");
+  try{await commitOps(ops);ops.forEach(o=>{if(o.s===null)delete SYNC.known[o.c][o.id];else SYNC.known[o.c][o.id]=o.s});saveKnown();setSync("ok",`동기화됨 · ${new Date().toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"})}`)}
+  catch(e){setSync("err","올리지 못한 기록이 있어요. 인터넷이 연결되면 다시 올려요.");setTimeout(schedulePush,15000)}
+  finally{SYNC.pushing=false;if(SYNC.again){SYNC.again=false;schedulePush()}}
+}
+/* 원격 값 하나를 이 기기에 반영. val=null 이면 삭제 */
+function applyOne(c,id,val,h){
+  if(c==="h"){if(val===null)delete h[id];else h[id]=val}
+  else if(c==="v"){if(val===null)delete maru.visits[id];else maru.visits[id]=val}
+  else if(c==="w"){if(val===null)delete maru.weights[id];else maru.weights[id]=val}
+  else if(c==="m"&&val){if(id==="profile")maru.profile={...val,photoId:val.photoId||maru.profile.photoId};else if(id==="schedule")maru.schedule=val.list||[];else if(id==="meds")medLib=val.list||[]}
+}
+function persistAndRender(h){
+  try{localStorage.setItem(HK,JSON.stringify(h));localStorage.setItem(MARU_K,JSON.stringify(maru));localStorage.setItem(MK,JSON.stringify(medLib))}catch{}
+  store.start(sync);renderPick();renderMaru();
+}
+async function startSync(user){
+  SYNC.uid=user.uid;SYNC.email=user.email||"";SYNC.known=loadKnown();SYNC.on=true;renderSyncCard();setSync("busy");
+  try{
+    const remote={};for(const c of COLS){remote[c]={};const qs=await colRef(c).get();qs.forEach(d=>remote[c][d.id]=d.data())}
+    const st=localState();const h=st.h;let changed=false;
+    COLS.forEach(c=>{const kn=SYNC.known[c];
+      Object.entries(remote[c]).forEach(([id,r])=>{const rs=sig(r),l=st[c][id];
+        if(l===undefined){if(kn[id]===undefined){applyOne(c,id,r,h);changed=true}}            // 처음 보는 원격 기록 → 받기 (이 기기에서 지운 건 그대로 둠)
+        else{const ls=sig(l);
+          if(ls!==rs){const remoteWins=kn[id]===rs?false:kn[id]===ls?true:((r.updatedAt||"")>=(l.updatedAt||""));
+            if(remoteWins){applyOne(c,id,r,h);changed=true}}}
+        kn[id]=rs});
+      Object.keys(st[c]).forEach(id=>{if(!(id in remote[c])&&kn[id]!==undefined){applyOne(c,id,null,h);delete kn[id];changed=true}}); // 다른 기기에서 지운 기록
+      Object.keys(kn).forEach(id=>{if(!(id in remote[c]))delete kn[id]});
+    });
+    saveKnown();if(changed)persistAndRender(h);
+    await pushDiff();
+    COLS.forEach(c=>SYNC.unsubs.push(colRef(c).onSnapshot(snap=>{
+      const h2=readH();const cur=localState();let ch=false;
+      snap.docChanges().forEach(x=>{const id=x.doc.id;
+        if(x.type==="removed"){if(cur[c][id]!==undefined&&sig(cur[c][id])===SYNC.known[c][id]){applyOne(c,id,null,h2);ch=true}delete SYNC.known[c][id];return}
+        const r=x.doc.data(),rs=sig(r),l=cur[c][id];
+        if(l!==undefined&&sig(l)!==SYNC.known[c][id]&&sig(l)!==rs)return; // 이 기기에서 고친 뒤 아직 안 올라간 기록은 덮지 않음
+        if(l===undefined||sig(l)!==rs){applyOne(c,id,r,h2);ch=true}
+        SYNC.known[c][id]=rs});
+      saveKnown();if(ch)persistAndRender(h2);
+      if(!snap.metadata.hasPendingWrites&&SYNC.state!=="err"&&!SYNC.pushing)setSync("ok");
+    },()=>setSync("err","연결이 끊겼어요. 앱을 다시 열어 주세요."))));
+    uploadMissingPhotos();
+  }catch(e){setSync("err","동기화를 시작하지 못했어요. 인터넷 연결을 확인해 주세요.");SYNC.on=true;setTimeout(()=>{if(SYNC.uid===user.uid){stopSync(true);startSync(user)}},20000)}
+}
+function stopSync(keepUser){SYNC.unsubs.forEach(u=>{try{u()}catch{}});SYNC.unsubs=[];SYNC.on=false;if(!keepUser){SYNC.uid=null;SYNC.email=""}setSync("off");renderSyncCard()}
+
+/* 사진: Firestore 'p' 컬렉션에 작게 줄인 JPEG을 data URL로 저장 */
+const PSK="sync-photos";
+function photoSynced(){try{return new Set(JSON.parse(localStorage.getItem(PSK+"-"+SYNC.uid)||"[]"))}catch{return new Set()}}
+function markPhoto(id,on){const s=photoSynced();on?s.add(id):s.delete(id);try{localStorage.setItem(PSK+"-"+SYNC.uid,JSON.stringify([...s]))}catch{}}
+const blobToDataURL=b=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(b)});
+async function pushPhoto(id,blob){if(!SYNC.on||!blob)return;
+  try{let b=blob;if(b.size>600000)b=await shrink(b,1100,.72);if(b.size>700000)b=await shrink(b,800,.65);
+    await colRef("p").doc(id).set({data:await blobToDataURL(b)});markPhoto(id,true)}catch{}}
+async function pullPhoto(id){if(!SYNC.on)return null;
+  try{const d=await colRef("p").doc(id).get();if(!d.exists)return null;const b=await (await fetch(d.data().data)).blob();await idb.put(id,b);markPhoto(id,true);return b}catch{return null}}
+function allPhotoIds(){const ids=[];if(maru.profile.photoId)ids.push(maru.profile.photoId);Object.values(maru.visits).forEach(v=>(v.photoIds||[]).forEach(p=>ids.push(p)));return ids}
+async function uploadMissingPhotos(){const done=photoSynced();for(const id of allPhotoIds()){if(done.has(id))continue;try{const b=await idb.get(id);if(b)await pushPhoto(id,b)}catch{}}}
+function delPhoto(id){idb.del(id).catch(()=>{});if(urlCache[id]){URL.revokeObjectURL(urlCache[id]);delete urlCache[id]}if(SYNC.on){colRef("p").doc(id).delete().catch(()=>{});markPhoto(id,false)}}
+
+/* 로그인 카드 */
+const AUTH_MSG={"auth/invalid-email":"이메일 형식을 확인해 주세요.","auth/invalid-credential":"이메일 또는 비밀번호가 맞지 않아요.","auth/wrong-password":"이메일 또는 비밀번호가 맞지 않아요.",
+  "auth/user-not-found":"가입된 이메일이 없어요. '처음이에요'로 가입해 주세요.","auth/email-already-in-use":"이미 가입된 이메일이에요. '로그인'을 눌러 주세요.",
+  "auth/weak-password":"비밀번호는 6자 이상으로 정해 주세요.","auth/network-request-failed":"인터넷 연결을 확인해 주세요.","auth/too-many-requests":"시도가 너무 많아요. 잠시 뒤 다시 해 주세요.",
+  "auth/operation-not-allowed":"Firebase에서 이메일/비밀번호 로그인이 꺼져 있어요. 설정에서 켜 주세요."};
+function renderSyncCard(){
+  const box=$("#syncBody");if(!box)return;
+  if(!fb){box.innerHTML=`<div class="fine" style="margin:0">아직 동기화 설정 전이에요. 지금은 기록이 이 기기에만 저장되니, 다른 기기로 옮길 때는 아래 백업 파일을 '합치기'로 불러오세요.</div>`;return}
+  if(SYNC.uid){box.innerHTML=`<div class="kv"><span>계정</span><b>${esc(SYNC.email)}</b></div><div class="kv"><span>상태</span><b id="syncState">${esc($("#status").textContent)}</b></div>
+    <div class="fine">PC와 폰에서 같은 계정으로 로그인하면 두통 기록, 약 목록, 마루 기록과 사진이 자동으로 맞춰져요.</div>
+    <div class="actions" style="margin-top:12px"><button type="button" class="btn ghost small" id="syncNow">지금 동기화</button><button type="button" class="btn ghost small" id="syncOut">로그아웃</button></div>`;
+    $("#syncNow").onclick=()=>{stopSync(true);fb.auth.currentUser&&startSync(fb.auth.currentUser)};
+    $("#syncOut").onclick=()=>{const a=$("#syncOut").parentElement;a.innerHTML=`<div class="confirm" style="justify-content:flex-start">로그아웃해도 이 기기의 기록은 남아요.<button type="button" class="btn small" id="syncOutY">로그아웃</button><button type="button" class="btn ghost small" id="syncOutN">취소</button></div>`;
+      $("#syncOutN").onclick=renderSyncCard;$("#syncOutY").onclick=()=>fb.auth.signOut()};
+    return}
+  box.innerHTML=`<div class="fine" style="margin:0 0 12px">PC와 폰에서 같은 이메일로 로그인하면 기록이 자동으로 맞춰져요. 처음 로그인할 때 이 기기 기록과 서버 기록이 합쳐져요.</div>
+    <form id="authForm" style="gap:8px" autocomplete="on">
+      <input type="email" id="authEmail" placeholder="이메일" autocomplete="username" required>
+      <input type="password" id="authPw" placeholder="비밀번호 (6자 이상)" autocomplete="current-password" required minlength="6">
+      <div class="actions"><button type="submit" class="btn">로그인</button><button type="button" class="btn ghost" id="authJoin">처음이에요 (가입)</button><button type="button" class="btn ghost small" id="authReset">비밀번호 찾기</button></div>
+      <div class="msg" id="authMsg" style="color:var(--danger)"></div>
+    </form>`;
+  const go=async(join)=>{const em=$("#authEmail").value.trim(),pw=$("#authPw").value;$("#authMsg").textContent="";
+    if(!em||pw.length<6){$("#authMsg").textContent="이메일과 6자 이상 비밀번호를 넣어 주세요.";return}
+    try{join?await fb.auth.createUserWithEmailAndPassword(em,pw):await fb.auth.signInWithEmailAndPassword(em,pw);toast(join?"가입했어요. 동기화를 시작해요":"로그인했어요. 동기화를 시작해요")}
+    catch(e){$("#authMsg").textContent=AUTH_MSG[e.code]||"로그인하지 못했어요. 잠시 뒤 다시 해 주세요."}};
+  $("#authForm").onsubmit=ev=>{ev.preventDefault();go(false)};
+  $("#authJoin").onclick=()=>go(true);
+  $("#authReset").onclick=async()=>{const em=$("#authEmail").value.trim();if(!em){$("#authMsg").textContent="이메일을 먼저 넣어 주세요.";return}
+    try{await fb.auth.sendPasswordResetEmail(em);$("#authMsg").style.color="var(--good)";$("#authMsg").textContent="비밀번호 재설정 메일을 보냈어요."}catch(e){$("#authMsg").textContent=AUTH_MSG[e.code]||"메일을 보내지 못했어요."}};
+}
+function initSync(){
+  try{if(FIREBASE_CONFIG&&window.firebase){firebase.initializeApp(FIREBASE_CONFIG);fb={auth:firebase.auth(),db:firebase.firestore()};
+    fb.auth.onAuthStateChanged(u=>{if(u){if(SYNC.uid!==u.uid){stopSync(true);startSync(u)}}else stopSync(false)})}}catch{fb=null}
+  renderSyncCard();
+}
 
 /* ---------- 탭 ---------- */
 const TABS=["headache","maru","summary"];
@@ -1024,7 +1187,7 @@ window.addEventListener("hashchange",()=>showTab(location.hash.slice(1),true));
 
 /* ---------- 시작 ---------- */
 resetForm();
-store=localStore();store.start(sync);$("#status").textContent="이 폰에 저장됨";
+store=localStore();store.start(sync);setSync("off");initSync();
 $("#w-date").value=ymd(new Date());
 renderMaru();
 let first=location.hash.slice(1);if(!TABS.includes(first)){try{first=localStorage.getItem("last-tab")}catch{}}
